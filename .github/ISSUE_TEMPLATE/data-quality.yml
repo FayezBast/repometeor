@@ -1,0 +1,30 @@
+name: Data-quality report
+description: Report stale, renamed, missing, or inconsistent aggregate repository data
+labels: [data-quality, needs-triage]
+body:
+  - type: input
+    id: repository
+    attributes: { label: Public repository, placeholder: owner/name }
+    validations: { required: true }
+  - type: input
+    id: observed
+    attributes: { label: Observed at UTC, placeholder: "2026-08-01T12:00:00Z" }
+    validations: { required: true }
+  - type: textarea
+    id: issue
+    attributes:
+      {
+        label: Mismatch,
+        description: Include RepoMeteor URL,
+        window,
+        visible values,
+        and why they appear inconsistent.,
+      }
+    validations: { required: true }
+  - type: textarea
+    id: evidence
+    attributes:
+      {
+        label: Public aggregate evidence,
+        description: Do not include individual stargazer identities or private API responses.,
+      }

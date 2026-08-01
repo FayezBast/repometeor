@@ -291,7 +291,10 @@ func TestHeadIsSupportedOnReadRoutes(t *testing.T) {
 
 	// Image proxies and monitors probe with HEAD; a 405 there would break
 	// badges embedded in READMEs.
-	for _, path := range []string{"/healthz", "/v1/badges/orbit-labs/signal-kit.svg"} {
+	for _, path := range []string{
+		"/healthz", "/readyz", "/metrics",
+		"/v1/badges/orbit-labs/signal-kit.svg", "/v1/methodology",
+	} {
 		rec := do(t, s, http.MethodHead, path, "", nil)
 		if rec.Code == http.StatusMethodNotAllowed {
 			t.Errorf("HEAD %s returned 405", path)
@@ -1049,4 +1052,22 @@ func ginContextFor(req *http.Request) *gin.Context {
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 	c.Request = req
 	return c
+}
+
+func TestRetryAfterSecondsUsesTheServiceClock(t *testing.T) {
+	now := apiRef
+
+	// A future reset rounds up to whole seconds.
+	if got := retryAfterSeconds(now, now.Add(30*time.Second)); got != 31 {
+		t.Errorf("retryAfterSeconds(+30s) = %d, want 31", got)
+	}
+
+	// A reset that has already passed — which happens whenever the service
+	// clock and the wall clock disagree — must still yield a usable header
+	// rather than a value that would be omitted entirely.
+	for _, resetAt := range []time.Time{now, now.Add(-time.Hour), now.Add(-time.Millisecond)} {
+		if got := retryAfterSeconds(now, resetAt); got < 1 {
+			t.Errorf("retryAfterSeconds(reset=%v) = %d, want at least 1", resetAt, got)
+		}
+	}
 }

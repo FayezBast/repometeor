@@ -2,7 +2,6 @@ package jobs
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -22,16 +21,9 @@ import (
 // separate polls is a real disappearance.
 const missingConfirmations = 3
 
-// CollectPayload is the job payload for a repository collection.
-type CollectPayload struct {
-	// Owner and Name identify the repository. They are re-validated by the
-	// GitHub client before any request is built.
-	Owner string `json:"owner"`
-	Name  string `json:"name"`
-	// UserRequested marks work a person is waiting for, which is allowed to
-	// spend rate budget that background collection may not.
-	UserRequested bool `json:"userRequested,omitempty"`
-}
+// CollectPayload is the collect_repository job payload. It is an alias for the
+// shared type so that producers and this consumer cannot drift apart.
+type CollectPayload = repository.CollectPayload
 
 // Collector polls one repository and stores an aggregate snapshot.
 type Collector struct {
@@ -76,11 +68,11 @@ func (c *Collector) Kind() repository.JobKind { return repository.JobCollectRepo
 // GitHub's stable ID and the snapshot upsert on (repository, bucket), so
 // running the same job twice inside one bucket updates rather than duplicates.
 func (c *Collector) Handle(ctx context.Context, job repository.Job) error {
-	var payload CollectPayload
-	if err := json.Unmarshal(job.Payload, &payload); err != nil {
+	payload, err := repository.DecodeCollectPayload(job.Payload)
+	if err != nil {
 		// A payload that cannot be decoded will never decode; retrying is
 		// pointless, so fail straight to the dead-letter path.
-		return fmt.Errorf("invalid collect payload: %w", err)
+		return err
 	}
 
 	purpose := github.PurposeBackground
@@ -340,11 +332,11 @@ func (c *Collector) handleFetchError(
 			Priority:    40,
 			RunAfter:    now,
 			MaxAttempts: 3,
-			Payload: mustJSON(CollectPayload{
+			Payload: repository.CollectPayload{
 				Owner:         ghErr.CanonicalOwner,
 				Name:          ghErr.CanonicalName,
 				UserRequested: payload.UserRequested,
-			}),
+			}.Encode(),
 			DedupeKey: "collect:" + ghErr.CanonicalOwner + "/" + ghErr.CanonicalName,
 		}); err != nil && !errors.Is(err, repository.ErrDuplicateJob) {
 			return fmt.Errorf("re-queue renamed repository: %w", err)
@@ -398,16 +390,6 @@ func (c *Collector) nextCheckAt(tier repository.TrackingTier, now time.Time) tim
 	default:
 		return now.Add(c.tracking.ColdPollInterval)
 	}
-}
-
-func mustJSON(v any) []byte {
-	encoded, err := json.Marshal(v)
-	if err != nil {
-		// The payload types here are plain structs of strings and bools; a
-		// failure would be a programming error, not a runtime condition.
-		panic(fmt.Sprintf("marshal job payload: %v", err))
-	}
-	return encoded
 }
 
 // name builds a reponame.Name for lookups. Validation happens again inside the

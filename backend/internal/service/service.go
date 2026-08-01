@@ -563,11 +563,11 @@ func (s *Service) Track(ctx context.Context, name reponame.Name) (TrackResult, e
 		Priority:    100, // A person is waiting for this one.
 		RunAfter:    s.clock.Now(),
 		MaxAttempts: 3,
-		Payload: mustJSON(map[string]any{
-			"owner":         name.Owner,
-			"name":          name.Repository,
-			"userRequested": true,
-		}),
+		Payload: repository.CollectPayload{
+			Owner:         name.Owner,
+			Name:          name.Repository,
+			UserRequested: true,
+		}.Encode(),
 		DedupeKey: "collect:" + name.Lower().String(),
 	})
 	if err != nil && !errors.Is(err, repository.ErrDuplicateJob) {
@@ -635,14 +635,6 @@ func derefRank(rank *int) int {
 		return 0
 	}
 	return *rank
-}
-
-func mustJSON(v any) []byte {
-	encoded, err := json.Marshal(v)
-	if err != nil {
-		return []byte(`{}`)
-	}
-	return encoded
 }
 
 // AllowTracking applies the durable per-client rate limit for submissions.

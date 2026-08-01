@@ -1,0 +1,27 @@
+{
+  "name": "repometeor",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.30.1",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "pnpm --recursive --if-present build",
+    "capture:screenshots": "tsx scripts/capture-screenshots.ts",
+    "dev": "pnpm --filter @repometeor/web dev",
+    "format": "prettier --write '*.{md,json,yaml}' '.github/**/*.{md,yml,yaml}' 'contracts/**/*.{json,yaml}' 'docs/**/*.md' 'scripts/**/*.ts' && pnpm --recursive --if-present format",
+    "format:check": "prettier --check '*.{md,json,yaml}' '.github/**/*.{md,yml,yaml}' 'contracts/**/*.{json,yaml}' 'docs/**/*.md' 'scripts/**/*.ts' && pnpm --recursive exec prettier --check .",
+    "lint": "pnpm --recursive --if-present lint",
+    "test": "pnpm --recursive --if-present test",
+    "test:e2e": "pnpm --filter @repometeor/web test:e2e",
+    "typecheck": "pnpm --recursive --if-present typecheck"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.62.1",
+    "@redocly/cli": "2.43.2",
+    "prettier": "3.8.2",
+    "tsx": "4.20.6"
+  }
+}

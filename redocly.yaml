@@ -1,0 +1,9 @@
+extends:
+  - recommended
+
+rules:
+  # RepoMeteor deliberately documents only its real local server until a
+  # maintainer completes the domain checks in docs/LAUNCH.md.
+  no-server-example.com: off
+  # Liveness/readiness/metrics have no meaningful client-generated 4xx path.
+  operation-4xx-response: off

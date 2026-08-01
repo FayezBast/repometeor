@@ -1,0 +1,31 @@
+name: Bug report
+description: Report a reproducible RepoMeteor defect
+labels: [bug, needs-triage]
+body:
+  - type: markdown
+    attributes:
+      value: Do not include tokens, private data, exploitable security details, or raw production logs.
+  - type: input
+    id: version
+    attributes: { label: Version or commit, placeholder: v0.1.0 or commit SHA }
+    validations: { required: true }
+  - type: dropdown
+    id: mode
+    attributes: { label: Mode, options: [Demo, Live, Unknown] }
+    validations: { required: true }
+  - type: textarea
+    id: reproduce
+    attributes:
+      {
+        label: Reproduction,
+        description: Minimal numbered steps and sanitized configuration.,
+      }
+    validations: { required: true }
+  - type: textarea
+    id: expected
+    attributes: { label: Expected behavior }
+    validations: { required: true }
+  - type: textarea
+    id: actual
+    attributes: { label: Actual behavior and sanitized output }
+    validations: { required: true }

@@ -13,7 +13,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -107,12 +106,9 @@ func run() error {
 		collector := jobs.NewCollector(repos, snaps, queue, cache, provider, budget,
 			cfg.Tracking, appClock, log, metrics)
 
-		payload, err := json.Marshal(jobs.CollectPayload{
+		payload := repository.CollectPayload{
 			Owner: name.Owner, Name: name.Repository, UserRequested: true,
-		})
-		if err != nil {
-			return err
-		}
+		}.Encode()
 
 		if err := collector.Handle(ctx, repository.Job{
 			Kind: repository.JobCollectRepository, Payload: payload,

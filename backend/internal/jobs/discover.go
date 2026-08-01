@@ -199,7 +199,7 @@ func (d *Discoverer) considerCandidate(ctx context.Context, candidate github.Rep
 		Priority:    5,
 		RunAfter:    now,
 		MaxAttempts: 3,
-		Payload:     mustJSON(CollectPayload{Owner: candidate.Owner, Name: candidate.Name}),
+		Payload:     repository.CollectPayload{Owner: candidate.Owner, Name: candidate.Name}.Encode(),
 		DedupeKey:   "collect:" + candidate.FullName,
 	})
 	switch {

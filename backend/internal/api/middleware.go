@@ -385,13 +385,9 @@ func rateLimitReads(limiter *readLimiter, resolver *ClientIPResolver) gin.Handle
 		h.Set("X-RateLimit-Reset", strconv.FormatInt(resetAt.Unix(), 10))
 
 		if !allowed {
-			retryAfter := int(time.Until(resetAt).Seconds()) + 1
-			if retryAfter < 1 {
-				retryAfter = 1
-			}
 			rateLimited(c, fmt.Sprintf(
 				"This endpoint allows %d requests per minute. The allowance resets shortly.", limiter.limit),
-				retryAfter)
+				retryAfterSeconds(limiter.clock.Now(), resetAt))
 			return
 		}
 		c.Next()
@@ -431,4 +427,19 @@ func mustMarshal(v any) []byte {
 // resolveTrustedProxies converts configuration into a resolver.
 func resolveTrustedProxies(cfg config.APIConfig) *ClientIPResolver {
 	return NewClientIPResolver(cfg.TrustedProxyCIDRs)
+}
+
+// retryAfterSeconds renders a Retry-After value from the service clock.
+//
+// It is always at least one second: a 429 whose Retry-After rounds to zero —
+// or, worse, is omitted because the value was non-positive — leaves a client
+// with no guidance and invites an immediate retry. Using the injectable clock
+// rather than time.Until keeps the header consistent with the limiter that
+// produced resetAt.
+func retryAfterSeconds(now, resetAt time.Time) int {
+	seconds := int(resetAt.Sub(now).Seconds()) + 1
+	if seconds < 1 {
+		return 1
+	}
+	return seconds
 }

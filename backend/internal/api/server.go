@@ -131,7 +131,7 @@ func (s *Server) buildRouter() *gin.Engine {
 	get(router, "/healthz", s.handleHealth)
 	get(router, "/readyz", s.handleReady)
 	if s.cfg.Metrics.Enabled {
-		router.GET("/metrics", gin.WrapH(promhttp.HandlerFor(
+		get(router, "/metrics", gin.WrapH(promhttp.HandlerFor(
 			s.metrics.Registry(), promhttp.HandlerOpts{},
 		)))
 	}

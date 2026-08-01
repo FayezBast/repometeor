@@ -1,0 +1,18 @@
+# syntax=docker/dockerfile:1.7
+FROM golang:1.25.6-alpine AS build
+WORKDIR /src/backend
+COPY backend/go.mod backend/go.sum ./
+RUN go mod download
+COPY backend/ ./
+RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags='-s -w' -o /out/api ./cmd/api \
+    && CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags='-s -w' -o /out/migrate ./cmd/migrate \
+    && CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags='-s -w' -o /out/seed ./cmd/seed
+
+FROM alpine:3.23.3
+RUN addgroup -S repometeor && adduser -S -G repometeor -u 10001 repometeor \
+    && apk add --no-cache ca-certificates tzdata
+COPY --from=build /out/api /out/migrate /out/seed /usr/local/bin/
+USER repometeor
+EXPOSE 8080
+HEALTHCHECK --interval=30s --timeout=3s --retries=3 CMD wget --quiet --spider http://127.0.0.1:8080/healthz || exit 1
+CMD ["/usr/local/bin/api"]

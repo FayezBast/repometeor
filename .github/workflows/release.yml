@@ -1,0 +1,52 @@
+name: Release preparation
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: backend/go.mod
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.30.1
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: make lint test build
+      - name: Build release binaries
+        run: |
+          mkdir -p release
+          cd backend
+          CGO_ENABLED=0 go build -trimpath -o ../release/repometeor-api ./cmd/api
+          CGO_ENABLED=0 go build -trimpath -o ../release/repometeor-worker ./cmd/worker
+          CGO_ENABLED=0 go build -trimpath -o ../release/repometeor-migrate ./cmd/migrate
+      - name: Pack CLI without publishing
+        run: pnpm --filter @repometeor/cli pack --pack-destination ../../release
+      - name: Build container images without pushing
+        run: |
+          docker build -f backend/Dockerfile.api -t repometeor-api:${{ github.ref_name }} .
+          docker build -f backend/Dockerfile.worker -t repometeor-worker:${{ github.ref_name }} .
+          docker build -f apps/web/Dockerfile -t repometeor-web:${{ github.ref_name }} .
+      - name: Checksums and draft notes
+        run: |
+          cp CHANGELOG.md release/RELEASE_NOTES.md
+          cd release
+          sha256sum * > SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: repometeor-${{ github.ref_name }}
+          path: release/
+          if-no-files-found: error
+      - name: Publication remains manual
+        run: echo "Review artifacts, release notes, package ownership, signatures, and secrets before publishing."

@@ -1,0 +1,9 @@
+{
+  "type": "/problems/validation-failed",
+  "title": "Validation failed",
+  "status": 400,
+  "detail": "One or more query parameters are invalid.",
+  "instance": "/v1/trending",
+  "requestId": "4de9c4bdf835ab4dd84f1dd7",
+  "errors": [{ "field": "window", "message": "must be one of: 6h, 24h, 7d" }]
+}

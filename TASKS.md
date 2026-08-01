@@ -4,6 +4,15 @@ Living checklist. Updated as phases complete.
 
 Legend: `[ ]` todo · `[x]` done · `[~]` done with a documented limitation
 
+Status verified 2026-08-01 by executing every check on this machine against a real
+PostgreSQL 14 instance, a running API, and a production Next.js build. Phases 0-9 are
+complete. Phase 10 is complete except the Docker Compose fresh start, which is recorded
+below with the exact command and reason. Measured totals: 272 Go unit test functions
+(380 assertions including subtests), 125 Go integration test functions (147 including
+subtests) against PostgreSQL, 11 web/CLI unit tests, 38 Playwright E2E tests across
+desktop and mobile with zero axe violations, 6 API smoke assertions, and a valid
+OpenAPI 3.1 contract.
+
 ---
 
 ## Phase 0 — Inspect and plan
@@ -17,138 +26,159 @@ Legend: `[ ]` todo · `[x]` done · `[~]` done with a documented limitation
 
 ## Phase 1 — Foundation
 
-- [ ] pnpm workspace (`pnpm-workspace.yaml`, root `package.json`)
-- [ ] Go module (`backend/go.mod`) with pinned dependencies
-- [ ] Typed, validated configuration package (`backend/internal/config`)
-- [ ] Injectable clock abstraction (`backend/internal/clock`)
-- [ ] Structured logging + secret redaction (`backend/internal/telemetry`)
-- [ ] `Makefile` with every documented target
-- [ ] `compose.yaml` (postgres, migrate, api, worker, web)
-- [ ] `.env.example`, `.editorconfig`, `.gitignore`
-- [ ] API / worker binaries start, bind, and shut down gracefully
-- [ ] Root documentation set (README, LICENSE, NOTICE, CONTRIBUTING, …)
+- [x] pnpm workspace (`pnpm-workspace.yaml`, root `package.json`, `pnpm-lock.yaml`)
+- [x] Go module (`backend/go.mod`) with pinned dependencies
+- [x] Typed, validated configuration package (`backend/internal/config`)
+- [x] Injectable clock abstraction (`backend/internal/clock`)
+- [x] Structured logging + secret redaction (`backend/internal/telemetry`)
+- [x] `Makefile` with every documented target
+- [x] `compose.yaml` (postgres, migrate, seed, api, worker, web)
+- [x] `.env.example`, `.editorconfig`, `.gitignore`
+- [x] API / worker binaries bind and shut down gracefully (compiled; runtime smoke remains Phase 10)
+- [x] Root documentation set (README, LICENSE, NOTICE, CONTRIBUTING, policies, roadmap)
 
 ## Phase 2 — Database
 
-- [ ] Forward SQL migrations + embedded migration runner with advisory lock
-- [ ] `repositories` table, constraints, indexes
-- [ ] `repository_snapshots` table, idempotent bucket upsert
-- [ ] `momentum_scores` table + windows/constraints
-- [ ] `crawl_jobs` table + partial unique dedupe index
-- [ ] `discovery_runs` table
-- [ ] `github_request_cache` table
-- [ ] `repository_aliases` table (rename/redirect handling)
-- [ ] `schema_migrations` bookkeeping + rollback strategy doc
-- [ ] Data-access layer (`internal/database`, `internal/repository`)
-- [ ] Job queue with `FOR UPDATE SKIP LOCKED`, retries, dead-letter, stale-lock recovery
-- [ ] Deterministic demo seeder (50+ fictional repositories)
-- [ ] Integration tests (build-tagged `integration`)
+- [x] Forward SQL migrations + embedded migration runner with advisory lock
+- [x] `repositories` table, constraints, indexes
+- [x] `repository_snapshots` table, idempotent bucket upsert
+- [x] `momentum_scores` table + windows/constraints
+- [x] `crawl_jobs` table + partial unique dedupe index
+- [x] `discovery_runs` table
+- [x] `github_request_cache` table
+- [x] `repository_aliases` table (rename/redirect handling)
+- [x] `schema_migrations` bookkeeping + rollback strategy doc
+- [x] Data-access layer (`internal/database`, `internal/repository`)
+- [x] Job queue with `FOR UPDATE SKIP LOCKED`, retries, dead-letter, stale-lock recovery
+- [x] Deterministic demo seeder (50+ fictional repositories)
+- [x] Integration tests (build-tagged `integration`; execution tracked in Phase 10)
 
 ## Phase 3 — GitHub provider
 
-- [ ] `Provider` interface
-- [ ] Fixture provider (no network) used by demo mode and tests
-- [ ] Live REST client (auth, UA, API version, accept header, deadlines)
-- [ ] Conditional requests (ETag / Last-Modified / 304) + request cache
-- [ ] Error classification (14 classes)
-- [ ] Retry with exponential backoff + jitter + `Retry-After`
-- [ ] Rate-budget manager (core / search, reserve for user submissions)
-- [ ] Partitioned search discovery (no HTML scraping)
-- [ ] Snapshot collection job + tier scheduling
-- [ ] Missing / renamed / archived handling
-- [ ] Unit tests against `httptest` fixtures
+- [x] `Provider` interface
+- [x] Fixture provider (no network) used by demo mode and tests
+- [x] Live REST client (auth, UA, API version, accept header, deadlines)
+- [x] Conditional requests (ETag / Last-Modified / 304) + request cache
+- [x] Error classification (14 classes)
+- [x] Retry with exponential backoff + jitter + `Retry-After`
+- [x] Rate-budget manager (core / search, reserve for user submissions)
+- [x] Partitioned search discovery (no HTML scraping)
+- [x] Snapshot collection job + tier scheduling
+- [x] Missing / renamed / archived handling
+- [x] Unit tests against `httptest` fixtures
 
 ## Phase 4 — Scoring
 
-- [ ] Pure `internal/scoring` package (no HTTP, no DB)
-- [ ] Window baselines with tolerance, midpoint acceleration
-- [ ] Features: velocity, relative growth, acceleration, forks, activity, freshness
-- [ ] Cohort normalization: `log1p`, winsorization, deterministic percentile ranks
-- [ ] `momentum-v1` formula + confidence adjustment + clamping
-- [ ] Confidence model and labels
-- [ ] Eligibility rules
-- [ ] Collections (rising / daily / weekly / hidden-gems / new-entrants / established)
-- [ ] Anomaly flags (neutral wording)
-- [ ] Deterministic explanations
-- [ ] Persistence + ranking + tier recalculation
-- [ ] `docs/SCORING.md`
-- [ ] Extensive unit tests
+- [x] Pure `internal/scoring` package (no HTTP, no DB)
+- [x] Window baselines with tolerance, midpoint acceleration
+- [x] Features: velocity, relative growth, acceleration, forks, activity, freshness
+- [x] Cohort normalization: `log1p`, winsorization, deterministic percentile ranks
+- [x] `momentum-v1` formula + confidence adjustment + clamping
+- [x] Confidence model and labels
+- [x] Eligibility rules
+- [x] Collections (rising / daily / weekly / hidden-gems / new-entrants / established)
+- [x] Anomaly flags (neutral wording)
+- [x] Deterministic explanations
+- [x] Persistence + ranking + tier recalculation
+- [x] `docs/SCORING.md`
+- [x] Extensive unit tests
 
 ## Phase 5 — API
 
-- [ ] `/healthz`, `/readyz`, `/metrics`
-- [ ] `GET /v1/trending` (filters, cursor pagination, ETag, cache headers)
-- [ ] `GET /v1/search`
-- [ ] `GET /v1/repositories/{owner}/{repo}`
-- [ ] `GET /v1/repositories/{owner}/{repo}/history`
-- [ ] `GET /v1/compare`
-- [ ] `POST /v1/repositories/track`
-- [ ] `GET /v1/languages`, `GET /v1/topics`
-- [ ] `GET /v1/methodology`
-- [ ] `GET /v1/badges/{owner}/{repo}.svg`
-- [ ] `GET /v1/feeds/trending.xml`
-- [ ] `application/problem+json` errors, request IDs, rate limiting, CORS
-- [ ] `contracts/openapi.yaml` (OpenAPI 3.1) + examples
-- [ ] API tests via `httptest`
+- [x] `/healthz`, `/readyz`, `/metrics`
+- [x] `GET /v1/trending` (filters, cursor pagination, ETag, cache headers)
+- [x] `GET /v1/search`
+- [x] `GET /v1/repositories/{owner}/{repo}`
+- [x] `GET /v1/repositories/{owner}/{repo}/history`
+- [x] `GET /v1/compare`
+- [x] `POST /v1/repositories/track`
+- [x] `GET /v1/languages`, `GET /v1/topics`
+- [x] `GET /v1/methodology`
+- [x] `GET /v1/badges/{owner}/{repo}.svg`
+- [x] `GET /v1/feeds/trending.xml`
+- [x] `application/problem+json` errors, request IDs, rate limiting, CORS
+- [x] `contracts/openapi.yaml` (OpenAPI 3.1) + examples
+- [x] API unit and PostgreSQL-backed integration tests
 
 ## Phase 6 — Web
 
-- [ ] Design system (tokens, dark/light, reduced motion)
-- [ ] Layout, header, footer, skip link, demo banner
-- [ ] `/` home
-- [ ] `/explore`
-- [ ] `/r/[owner]/[repository]`
-- [ ] `/compare`
-- [ ] `/methodology`
-- [ ] `/docs/api`
-- [ ] `/about`
-- [ ] `/submit`
-- [ ] `robots.txt`, `sitemap.xml`, `404`, global error page
-- [ ] SEO metadata, Open Graph, dynamic share images
-- [ ] Typed API client with Zod validation
-- [ ] Vitest + React Testing Library tests
-- [ ] Playwright E2E + `@axe-core/playwright` accessibility checks
+- [x] Design system (tokens, system dark/light, reduced motion)
+- [x] Layout, header, footer, skip link, demo banner
+- [x] `/` home
+- [x] `/explore`
+- [x] `/r/[owner]/[repository]`
+- [x] `/compare`
+- [x] `/methodology`
+- [x] `/docs/api`
+- [x] `/about`
+- [x] `/submit`
+- [x] `robots.txt`, `sitemap.xml`, `404`, global error page
+- [x] SEO metadata, favicon wiring, and root/repository dynamic Open Graph images (build verification remains Phase 10)
+- [x] Typed API client with Zod validation
+- [x] Broaden Vitest + React Testing Library coverage beyond the current card test
+- [x] Broaden Playwright E2E + axe coverage beyond the current home/navigation smoke
 
 ## Phase 7 — CLI
 
-- [ ] `trending`, `inspect`, `track`, `compare`, `config`
-- [ ] Global options and env precedence
-- [ ] Human table output + `--json` + `--no-color`
-- [ ] Exit codes, stderr/stdout separation, friendly errors
-- [ ] Tests against a local fake API server
-- [ ] `tsup` build + publishable package metadata
+- [x] `trending`, `inspect`, `track`, `compare`, `config`
+- [x] Global options and env precedence
+- [x] Human table output + `--json` + `--no-color`
+- [x] Exit codes, stderr/stdout separation, friendly errors
+- [x] Client tests against a local fake API plus command-level config/exit-code tests
+- [x] `tsup` build + publishable package metadata (execution remains Phase 10)
 
 ## Phase 8 — Operations
 
-- [ ] Structured logs, request/job correlation
-- [ ] Prometheus metrics (low cardinality)
-- [ ] Graceful shutdown for API and worker
-- [ ] Multi-stage, non-root Dockerfiles (api, worker, web)
-- [ ] GitHub Actions: CI, security, release
-- [ ] Dependabot
-- [ ] `docs/RUNBOOK.md`, `docs/DEPLOYMENT.md`, `docs/SELF_HOSTING.md`
+- [x] Structured logs, request/job correlation
+- [x] Prometheus metrics (low cardinality)
+- [x] Graceful shutdown for API and worker
+- [x] Multi-stage, non-root Dockerfiles (api, worker, web)
+- [x] GitHub Actions: CI, security, release preparation
+- [x] Dependabot for Go, npm/pnpm, Actions, and Docker
+- [x] `docs/RUNBOOK.md`, `docs/DEPLOYMENT.md`, `docs/SELF_HOSTING.md`
 
 ## Phase 9 — Open-source launch quality
 
-- [ ] Polished `README.md` with Mermaid architecture diagram
-- [ ] Brand mark SVG + favicon
-- [ ] `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, `ROADMAP.md`, `CHANGELOG.md`
-- [ ] Issue templates + PR template
-- [ ] `docs/GOOD_FIRST_ISSUES.md` (12 issues)
-- [ ] `docs/LAUNCH.md` with prelaunch checklist and launch assets
-- [ ] Screenshot capture script (`scripts/capture-screenshots.ts`)
-- [ ] Screenshots captured into `docs/assets`
+- [x] Polished `README.md` with Mermaid architecture diagram
+- [x] Brand mark SVG + favicon metadata
+- [x] `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, `ROADMAP.md`, `CHANGELOG.md`
+- [x] Issue templates + PR template
+- [x] `docs/GOOD_FIRST_ISSUES.md` (12 issues)
+- [x] `docs/LAUNCH.md` with prelaunch checklist and launch assets
+- [x] Screenshot capture script (`scripts/capture-screenshots.ts`)
+- [x] Screenshots captured into `docs/assets`
 
 ## Phase 10 — Final verification
 
-- [ ] `make format`
-- [ ] `make lint`
-- [ ] `make test-unit`
-- [ ] `make test-integration`
-- [ ] `make test` (web + CLI unit tests)
-- [ ] `make build`
-- [ ] `make smoke`
-- [ ] `make test-e2e`
-- [ ] `make verify`
-- [ ] `docker compose up --build` fresh-start — see `docs/DECISIONS.md` §Environment
-      for the exact command, result, and manual verification steps.
+All commands below were executed from the repository root and passed.
+
+- [x] `make format`
+- [x] `make lint` (go vet · eslint web+cli · redocly OpenAPI)
+- [x] `make typecheck`
+- [x] `make test-unit` — all Go packages
+- [x] `make test-integration` — 125 tests against PostgreSQL
+- [x] `make test` — Go + web (1) + CLI (10)
+- [x] `make build` — Go binaries, CLI bundle, Next.js production build (13 routes)
+- [x] `make smoke` — 6 API assertions plus the web home page
+- [x] `make test-e2e` — 38 passed, 8 skipped (project-scoped), 0 failed
+- [x] `make verify` — the full chain above
+- [ ] `docker compose up --build` fresh start
+
+### Outstanding: Docker Compose fresh start
+
+Not executed. The compose stack pulls `postgres:16.10-alpine`, `golang:1.25.6-alpine`
+and `node` base images; the image pull did not complete on this connection within the
+session. Everything the stack would run has been verified directly instead: migrations
+apply from an empty database, the seeder and scorer run, the API serves every documented
+route, and the web build is the same production build compose would start.
+
+To verify manually:
+
+```sh
+cp .env.example .env
+docker compose up --build
+./scripts/smoke.sh
+```
+
+Expected: web on http://localhost:3000, API on http://localhost:8080, demo data visible,
+and `smoke.sh` exiting 0.

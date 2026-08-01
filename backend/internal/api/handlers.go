@@ -590,10 +590,9 @@ func (s *Server) handleTrack(c *gin.Context) {
 	c.Header("X-RateLimit-Reset", strconv.FormatInt(resetAt.Unix(), 10))
 
 	if !allowed {
-		retryAfter := int(time.Until(resetAt).Seconds()) + 1
 		rateLimited(c, fmt.Sprintf(
 			"Submissions are limited to %d per hour. Your allowance resets shortly.",
-			s.cfg.Limits.PublicTrackingPerHour), retryAfter)
+			s.cfg.Limits.PublicTrackingPerHour), retryAfterSeconds(s.clock.Now(), resetAt))
 		return
 	}
 

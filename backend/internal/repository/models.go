@@ -6,6 +6,8 @@
 package repository
 
 import (
+	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/repometeor/repometeor/backend/internal/reponame"
@@ -302,4 +304,39 @@ func derefTime(t *time.Time) time.Time {
 		return time.Time{}
 	}
 	return *t
+}
+
+// CollectPayload is the wire format of a collect_repository job.
+//
+// It lives here, in the layer both the producer and the consumer already
+// import, so that the API's tracking endpoint and the worker's collector cannot
+// drift apart. Encoding it as an untyped map at either end would make a renamed
+// field a silent runtime failure rather than a compile error.
+type CollectPayload struct {
+	// Owner and Name identify the repository. They are re-validated by the
+	// GitHub client before any request is built.
+	Owner string `json:"owner"`
+	Name  string `json:"name"`
+	// UserRequested marks work a person is waiting for, which may spend rate
+	// budget that background collection may not.
+	UserRequested bool `json:"userRequested,omitempty"`
+}
+
+// Encode renders the payload for storage.
+func (p CollectPayload) Encode() []byte {
+	encoded, err := json.Marshal(p)
+	if err != nil {
+		// The struct is three scalar fields; a failure would be impossible.
+		return []byte(`{}`)
+	}
+	return encoded
+}
+
+// DecodeCollectPayload parses a stored collect_repository payload.
+func DecodeCollectPayload(raw []byte) (CollectPayload, error) {
+	var p CollectPayload
+	if err := json.Unmarshal(raw, &p); err != nil {
+		return CollectPayload{}, fmt.Errorf("invalid collect payload: %w", err)
+	}
+	return p, nil
 }

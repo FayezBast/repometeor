@@ -1,0 +1,858 @@
+openapi: 3.1.0
+info:
+  title: RepoMeteor API
+  version: 0.1.0
+  summary: Transparent repository momentum from aggregate snapshots
+  description: |
+    RepoMeteor publishes deterministic momentum rankings, history, comparison,
+    facets, tracking submission, SVG badges, and Atom feeds. It is independent
+    of GitHub and does not collect individual stargazer identities.
+  license:
+    name: Apache License 2.0
+    identifier: Apache-2.0
+jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
+security: []
+servers:
+  - url: http://localhost:8080
+    description: Local development
+tags:
+  - name: Operations
+    description: Liveness, readiness, and internal observability surfaces.
+  - name: Rankings
+    description: Current deterministic momentum leaderboards.
+  - name: Repositories
+    description: Search, detail, history, comparison, and tracking submission.
+  - name: Metadata
+    description: Filter facets and machine-readable scoring methodology.
+  - name: Syndication
+    description: Cacheable SVG badges and Atom feeds.
+paths:
+  /healthz:
+    get:
+      tags: [Operations]
+      operationId: health
+      summary: Process liveness
+      responses:
+        "200":
+          description: Process is alive
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Health" }
+              example: { status: ok, service: repometeor-api, version: 0.1.0 }
+  /readyz:
+    get:
+      tags: [Operations]
+      operationId: readiness
+      summary: Dependency readiness
+      responses:
+        "200":
+          description: API can serve database-backed requests
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Ready" }
+              example:
+                { status: ready, checks: { database: ok }, demoMode: true }
+        "503": { $ref: "#/components/responses/ServiceUnavailable" }
+  /metrics:
+    get:
+      tags: [Operations]
+      operationId: metrics
+      summary: Prometheus metrics
+      description: Present only when `METRICS_ENABLED=true`; operators should keep it private.
+      responses:
+        "200":
+          description: Prometheus text exposition
+          content:
+            text/plain:
+              schema: { type: string }
+  /v1/trending:
+    get:
+      tags: [Rankings]
+      operationId: trending
+      summary: List current momentum rankings
+      parameters:
+        - $ref: "#/components/parameters/Window"
+        - $ref: "#/components/parameters/Collection"
+        - name: language
+          in: query
+          schema: { type: string, maxLength: 40 }
+        - name: topic
+          in: query
+          schema: { type: string, maxLength: 50, pattern: "^[A-Za-z0-9._-]+$" }
+        - name: minStars
+          in: query
+          schema: { type: integer, minimum: 0, maximum: 100000000 }
+        - name: maxStars
+          in: query
+          schema: { type: integer, minimum: 0, maximum: 100000000 }
+        - name: confidence
+          in: query
+          schema: { type: string, enum: [high, medium, low] }
+        - $ref: "#/components/parameters/Limit"
+        - name: cursor
+          in: query
+          description: Opaque `links.nextCursor` from the previous page.
+          schema: { type: string, maxLength: 256 }
+      responses:
+        "200":
+          description: Ranked page; an ETag and short public cache policy are included.
+          headers:
+            ETag: { schema: { type: string } }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TrendingResponse" }
+              examples:
+                demo:
+                  summary: One fictional demo result
+                  value:
+                    data:
+                      - repository:
+                          owner: orbit-labs
+                          name: signal-kit
+                          fullName: orbit-labs/signal-kit
+                          description: Typed event streams for distributed Go services
+                          url: https://github.com/orbit-labs/signal-kit
+                          homepageUrl: null
+                          avatarUrl: null
+                          language: Go
+                          topics: [developer-tools, distributed-systems, events]
+                          license: Apache-2.0
+                          stars: 1240
+                          forks: 81
+                          openIssues: 12
+                          isArchived: false
+                          isFork: false
+                          createdAt: "2026-01-03T12:00:00Z"
+                          pushedAt: "2026-08-01T08:00:00Z"
+                        momentum:
+                          window: 24h
+                          score: 88.4
+                          rank: 1
+                          starDelta: 44
+                          starVelocity: 1.833
+                          relativeGrowth: 0.0368
+                          acceleration: 0.21
+                          forkDelta: 3
+                          forkVelocity: 0.125
+                          activityScore: 0.94
+                          freshnessScore: 0.75
+                          confidence: 0.96
+                          confidenceLabel: high
+                          reasons: [Gained 44 stars in 24 hours.]
+                          flags: []
+                          collections: [daily]
+                          formulaVersion: momentum-v1
+                          scoredAt: "2026-08-01T12:00:00Z"
+                        sparkline: [1196, 1204, 1217, 1240]
+                    meta:
+                      window: 24h
+                      collection: daily
+                      generatedAt: "2026-08-01T12:00:00Z"
+                      demoMode: true
+                      resultCount: 1
+                      formulaVersion: momentum-v1
+                    links: { nextCursor: null }
+        "400": { $ref: "#/components/responses/Validation" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "500": { $ref: "#/components/responses/Internal" }
+  /v1/search:
+    get:
+      tags: [Repositories]
+      operationId: searchRepositories
+      summary: Search already tracked repositories
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 120 }
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Matching tracked repositories
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SearchResponse" }
+        "400": { $ref: "#/components/responses/Validation" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+  /v1/repositories/{owner}/{repository}:
+    get:
+      tags: [Repositories]
+      operationId: repositoryDetail
+      summary: Get repository metadata and current momentum
+      parameters:
+        - $ref: "#/components/parameters/Owner"
+        - $ref: "#/components/parameters/Repository"
+      responses:
+        "200":
+          description: Tracked repository detail
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RepositoryDetail" }
+        "400": { $ref: "#/components/responses/Validation" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+  /v1/repositories/{owner}/{repository}/history:
+    get:
+      tags: [Repositories]
+      operationId: repositoryHistory
+      summary: Get stored aggregate history
+      parameters:
+        - $ref: "#/components/parameters/Owner"
+        - $ref: "#/components/parameters/Repository"
+        - name: range
+          in: query
+          schema: { type: string, enum: [24h, 7d, 30d, 90d], default: 7d }
+        - name: resolution
+          in: query
+          schema: { type: string, enum: [raw, 1h, 1d] }
+        - $ref: "#/components/parameters/WindowOptional"
+      responses:
+        "200":
+          description: Bounded history oldest first
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HistoryResponse" }
+        "400": { $ref: "#/components/responses/Validation" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+  /v1/compare:
+    get:
+      tags: [Repositories]
+      operationId: compareRepositories
+      summary: Compare two to four tracked repositories
+      parameters:
+        - name: repositories
+          in: query
+          required: true
+          description: Two to four comma-separated `owner/name` values.
+          schema: { type: string, minLength: 3, maxLength: 600 }
+          example: orbit-labs/signal-kit,comet-tools/local-indexer
+        - $ref: "#/components/parameters/Window"
+        - name: range
+          in: query
+          schema: { type: string, enum: [24h, 7d, 30d, 90d], default: 7d }
+      responses:
+        "200":
+          description: Aligned comparison entries, including unavailable notes when history is incomplete.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CompareResponse" }
+        "400": { $ref: "#/components/responses/Validation" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+  /v1/repositories/track:
+    post:
+      tags: [Repositories]
+      operationId: trackRepository
+      summary: Queue a public GitHub repository for collection
+      description: Live mode only. The API returns immediately and does not reconstruct pre-submission history.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [repository]
+              properties:
+                repository:
+                  type: string
+                  maxLength: 200
+                  description: "`owner/name` or canonical GitHub repository URL; issue/subpage URLs are rejected."
+                  example: owner/repository
+      responses:
+        "200":
+          description: Repository was already tracked
+          headers:
+            X-RateLimit-Limit: { schema: { type: integer } }
+            X-RateLimit-Remaining: { schema: { type: integer } }
+            X-RateLimit-Reset: { schema: { type: integer } }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TrackResponse" }
+        "202":
+          description: High-priority collection job queued
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TrackResponse" }
+              example:
+                status: queued
+                repository: owner/repository
+                message: Queued for collection; rankings appear after enough snapshots exist.
+                webUrl: http://localhost:3000/r/owner/repository
+        "400": { $ref: "#/components/responses/Validation" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "413": { $ref: "#/components/responses/PayloadTooLarge" }
+        "415": { $ref: "#/components/responses/UnsupportedMediaType" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+  /v1/languages:
+    get:
+      tags: [Metadata]
+      operationId: languages
+      summary: List tracked language facets
+      responses:
+        "200":
+          description: Language counts
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FacetsResponse" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+  /v1/topics:
+    get:
+      tags: [Metadata]
+      operationId: topics
+      summary: List tracked topic facets
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 500, default: 100 }
+      responses:
+        "200":
+          description: Topic counts
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FacetsResponse" }
+        "400": { $ref: "#/components/responses/Validation" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+  /v1/methodology:
+    get:
+      tags: [Metadata]
+      operationId: methodology
+      summary: Get machine-readable scoring methodology
+      responses:
+        "200":
+          description: Current formula, windows, weights, confidence, eligibility, collections, flags, and snapshot policy.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Methodology" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+  /v1/badges/{owner}/{repository}.svg:
+    get:
+      tags: [Syndication]
+      operationId: badge
+      summary: Render an embeddable SVG badge
+      parameters:
+        - $ref: "#/components/parameters/Owner"
+        - $ref: "#/components/parameters/Repository"
+        - $ref: "#/components/parameters/Window"
+        - name: metric
+          in: query
+          schema:
+            { type: string, enum: [momentum, stars, delta], default: momentum }
+        - name: theme
+          in: query
+          schema: { type: string, enum: [auto, light, dark], default: auto }
+      responses:
+        "200":
+          description: Self-contained, XML-escaped SVG
+          content:
+            image/svg+xml:
+              schema: { type: string, contentMediaType: image/svg+xml }
+        "400":
+          description: Valid SVG explaining invalid badge input
+          content:
+            image/svg+xml:
+              schema: { type: string }
+        "404":
+          description: Valid not-tracked SVG
+          content:
+            image/svg+xml:
+              schema: { type: string }
+        "429": { $ref: "#/components/responses/RateLimited" }
+  /v1/feeds/trending.xml:
+    get:
+      tags: [Syndication]
+      operationId: trendingFeed
+      summary: Get an Atom momentum feed
+      parameters:
+        - $ref: "#/components/parameters/Window"
+        - $ref: "#/components/parameters/Collection"
+        - name: language
+          in: query
+          schema: { type: string, maxLength: 40 }
+        - name: topic
+          in: query
+          schema: { type: string, maxLength: 50, pattern: "^[A-Za-z0-9._-]+$" }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 50, default: 20 }
+      responses:
+        "200":
+          description: Well-formed escaped Atom 1.0 feed; demo mode is stated in subtitle/content.
+          content:
+            application/atom+xml:
+              schema: { type: string, contentMediaType: application/atom+xml }
+        "400": { $ref: "#/components/responses/Validation" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+components:
+  parameters:
+    Owner:
+      name: owner
+      in: path
+      required: true
+      schema:
+        {
+          type: string,
+          minLength: 1,
+          maxLength: 39,
+          pattern: "^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?$",
+        }
+    Repository:
+      name: repository
+      in: path
+      required: true
+      schema:
+        {
+          type: string,
+          minLength: 1,
+          maxLength: 100,
+          pattern: "^[A-Za-z0-9._-]+$",
+        }
+    Window:
+      name: window
+      in: query
+      schema: { type: string, enum: [6h, 24h, 7d], default: 24h }
+    WindowOptional:
+      name: window
+      in: query
+      schema: { type: string, enum: [6h, 24h, 7d] }
+    Collection:
+      name: collection
+      in: query
+      schema:
+        type: string
+        enum: [rising, daily, weekly, hidden-gems, new-entrants, established]
+    Limit:
+      name: limit
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+  responses:
+    Validation:
+      description: Invalid bounded input
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+          example:
+            type: /problems/validation-failed
+            title: Validation failed
+            status: 400
+            detail: One or more query parameters are invalid.
+            instance: /v1/trending
+            requestId: 4de9c4bdf835ab4dd84f1dd7
+            errors: [{ field: window, message: "must be one of: 6h, 24h, 7d" }]
+    NotFound:
+      description: Resource is not tracked
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    Forbidden:
+      description: Operation is disabled or unavailable in demo mode
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    RateLimited:
+      description: Per-client allowance exhausted
+      headers:
+        Retry-After: { schema: { type: integer, minimum: 1 } }
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+          example:
+            type: /problems/rate-limited
+            title: Too many requests
+            status: 429
+            detail: Request allowance exhausted.
+            instance: /v1/trending
+            requestId: 4de9c4bdf835ab4dd84f1dd7
+            retryAfterSeconds: 42
+    ServiceUnavailable:
+      description: Required dependency or upstream capacity unavailable
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    PayloadTooLarge:
+      description: Request exceeds configured body limit
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    UnsupportedMediaType:
+      description: Tracking submissions require JSON
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    Internal:
+      description: Unexpected server failure; report the request ID
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+  schemas:
+    Health:
+      type: object
+      additionalProperties: false
+      required: [status, service, version]
+      properties:
+        status: { const: ok }
+        service: { const: repometeor-api }
+        version: { type: string }
+    Ready:
+      type: object
+      additionalProperties: false
+      required: [status, checks, demoMode]
+      properties:
+        status: { const: ready }
+        checks: { type: object, additionalProperties: { type: string } }
+        demoMode: { type: boolean }
+    Problem:
+      type: object
+      required: [type, title, status]
+      properties:
+        type: { type: string, pattern: "^/problems/" }
+        title: { type: string }
+        status: { type: integer, minimum: 400, maximum: 599 }
+        detail: { type: string }
+        instance: { type: string }
+        requestId: { type: string }
+        errors:
+          type: array
+          items: { $ref: "#/components/schemas/FieldError" }
+        retryAfterSeconds: { type: integer, minimum: 1 }
+    FieldError:
+      type: object
+      additionalProperties: false
+      required: [field, message]
+      properties:
+        field: { type: string }
+        message: { type: string }
+    Repository:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          owner,
+          name,
+          fullName,
+          description,
+          url,
+          homepageUrl,
+          avatarUrl,
+          language,
+          topics,
+          license,
+          stars,
+          forks,
+          openIssues,
+          isArchived,
+          isFork,
+          createdAt,
+          pushedAt,
+        ]
+      properties:
+        owner: { type: string }
+        name: { type: string }
+        fullName: { type: string }
+        description: { type: string }
+        url: { type: string, format: uri }
+        homepageUrl: { type: [string, "null"], format: uri }
+        avatarUrl: { type: [string, "null"], format: uri }
+        language: { type: [string, "null"] }
+        topics: { type: array, items: { type: string } }
+        license: { type: [string, "null"] }
+        stars: { type: integer, minimum: 0 }
+        forks: { type: integer, minimum: 0 }
+        openIssues: { type: integer, minimum: 0 }
+        isArchived: { type: boolean }
+        isFork: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        pushedAt: { type: [string, "null"], format: date-time }
+    Momentum:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          window,
+          score,
+          rank,
+          starDelta,
+          starVelocity,
+          relativeGrowth,
+          acceleration,
+          forkDelta,
+          forkVelocity,
+          activityScore,
+          freshnessScore,
+          confidence,
+          confidenceLabel,
+          reasons,
+          flags,
+          collections,
+          formulaVersion,
+          scoredAt,
+        ]
+      properties:
+        window: { type: string, enum: [6h, 24h, 7d] }
+        score: { type: number, minimum: 0, maximum: 100 }
+        rank: { type: [integer, "null"], minimum: 1 }
+        starDelta: { type: integer }
+        starVelocity: { type: number }
+        relativeGrowth: { type: number }
+        acceleration: { type: number }
+        forkDelta: { type: integer }
+        forkVelocity: { type: number }
+        activityScore: { type: number, minimum: 0, maximum: 1 }
+        freshnessScore: { type: number, minimum: 0, maximum: 1 }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+        confidenceLabel: { type: string, enum: [high, medium, low] }
+        reasons: { type: array, maxItems: 3, items: { type: string } }
+        flags: { type: array, items: { type: string } }
+        collections: { type: array, items: { type: string } }
+        formulaVersion: { type: string, const: momentum-v1 }
+        scoredAt: { type: string, format: date-time }
+    TrendingResponse:
+      type: object
+      additionalProperties: false
+      required: [data, meta, links]
+      properties:
+        data:
+          type: array
+          maxItems: 100
+          items:
+            type: object
+            additionalProperties: false
+            required: [repository, momentum, sparkline]
+            properties:
+              repository: { $ref: "#/components/schemas/Repository" }
+              momentum: { $ref: "#/components/schemas/Momentum" }
+              sparkline:
+                {
+                  type: array,
+                  maxItems: 24,
+                  items: { type: integer, minimum: 0 },
+                }
+        meta: { $ref: "#/components/schemas/RankingMeta" }
+        links:
+          type: object
+          additionalProperties: false
+          required: [nextCursor]
+          properties:
+            nextCursor: { type: [string, "null"] }
+    RankingMeta:
+      type: object
+      additionalProperties: false
+      required:
+        [window, collection, generatedAt, demoMode, resultCount, formulaVersion]
+      properties:
+        window: { type: string, enum: [6h, 24h, 7d] }
+        collection: { type: string }
+        generatedAt: { type: string, format: date-time }
+        demoMode: { type: boolean }
+        resultCount: { type: integer, minimum: 0 }
+        formulaVersion: { type: string }
+    RepositoryDetail:
+      type: object
+      required: [repository, momentum, tracking, links, meta]
+      properties:
+        repository: { $ref: "#/components/schemas/Repository" }
+        momentum:
+          {
+            type: object,
+            additionalProperties: { $ref: "#/components/schemas/Momentum" },
+          }
+        tracking:
+          type: object
+          required: [state, tier, trackingSince, firstSeenAt, lastCheckedAt]
+          properties:
+            state: { type: string }
+            tier: { type: string, enum: [hot, warm, cold] }
+            trackingSince: { type: [string, "null"], format: date-time }
+            firstSeenAt: { type: string, format: date-time }
+            lastCheckedAt: { type: [string, "null"], format: date-time }
+        links:
+          type: object
+          required: [self, web, github, badge, history, feed, badgeMarkdown]
+          properties:
+            self: { type: string, format: uri }
+            web: { type: string, format: uri }
+            github: { type: string, format: uri }
+            badge: { type: string, format: uri }
+            history: { type: string, format: uri }
+            feed: { type: string, format: uri }
+            badgeMarkdown: { type: string }
+        meta:
+          type: object
+          required: [demoMode, generatedAt, formulaVersion]
+          properties:
+            demoMode: { type: boolean }
+            generatedAt: { type: string, format: date-time }
+            formulaVersion: { type: string }
+            canonicalFullName: { type: string }
+    HistoryPoint:
+      type: object
+      required: [at, stars, forks, starDelta, forkDelta]
+      properties:
+        at: { type: string, format: date-time }
+        stars: { type: integer, minimum: 0 }
+        forks: { type: integer, minimum: 0 }
+        starDelta: { type: integer }
+        forkDelta: { type: integer }
+        score: { type: number, minimum: 0, maximum: 100 }
+    HistoryResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          { type: array, items: { $ref: "#/components/schemas/HistoryPoint" } }
+        meta:
+          type: object
+          required:
+            [
+              repository,
+              range,
+              resolution,
+              from,
+              to,
+              trackingSince,
+              pointCount,
+              demoMode,
+            ]
+          properties:
+            repository: { type: string }
+            range: { type: string }
+            resolution: { type: string, enum: [raw, 1h, 1d] }
+            from: { type: string, format: date-time }
+            to: { type: string, format: date-time }
+            trackingSince: { type: [string, "null"], format: date-time }
+            pointCount: { type: integer, minimum: 0 }
+            demoMode: { type: boolean }
+    CompareResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          minItems: 2
+          maxItems: 4
+          items:
+            type: object
+            required:
+              [
+                repository,
+                points,
+                momentum,
+                available,
+                note,
+                trackingSince,
+                summary,
+              ]
+            properties:
+              repository: { $ref: "#/components/schemas/Repository" }
+              points:
+                {
+                  type: array,
+                  items: { $ref: "#/components/schemas/HistoryPoint" },
+                }
+              momentum:
+                oneOf:
+                  - { $ref: "#/components/schemas/Momentum" }
+                  - { type: "null" }
+              available: { type: boolean }
+              note: { type: [string, "null"] }
+              trackingSince: { type: [string, "null"], format: date-time }
+              summary:
+                type: object
+                required:
+                  [
+                    startStars,
+                    endStars,
+                    absoluteGrowth,
+                    relativeGrowth,
+                    forkGrowth,
+                  ]
+                properties:
+                  startStars: { type: integer, minimum: 0 }
+                  endStars: { type: integer, minimum: 0 }
+                  absoluteGrowth: { type: integer }
+                  relativeGrowth: { type: number }
+                  forkGrowth: { type: integer }
+        meta:
+          type: object
+          required: [window, range, resolution, from, to, demoMode]
+          properties:
+            window: { type: string }
+            range: { type: string }
+            resolution: { type: string }
+            from: { type: string, format: date-time }
+            to: { type: string, format: date-time }
+            demoMode: { type: boolean }
+    SearchResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          {
+            type: array,
+            maxItems: 100,
+            items: { $ref: "#/components/schemas/Repository" },
+          }
+        meta:
+          type: object
+          required: [query, resultCount, demoMode]
+          properties:
+            query: { type: string }
+            resultCount: { type: integer, minimum: 0 }
+            demoMode: { type: boolean }
+    FacetsResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            required: [value, count]
+            properties:
+              value: { type: string }
+              count: { type: integer, minimum: 0 }
+        meta:
+          type: object
+          required: [resultCount, demoMode]
+          properties:
+            resultCount: { type: integer, minimum: 0 }
+            demoMode: { type: boolean }
+    TrackResponse:
+      type: object
+      additionalProperties: false
+      required: [status, repository, message, webUrl]
+      properties:
+        status: { type: string, enum: [queued, already_tracked] }
+        repository: { type: string }
+        message: { type: string }
+        webUrl: { type: [string, "null"], format: uri }
+    Methodology:
+      type: object
+      required:
+        [
+          formulaVersion,
+          description,
+          weights,
+          windows,
+          confidence,
+          eligibility,
+          collections,
+          anomalyFlags,
+          snapshots,
+          formula,
+          lastUpdated,
+          demoMode,
+        ]
+      properties:
+        formulaVersion: { type: string, const: momentum-v1 }
+        description: { type: string }
+        weights: { type: object, additionalProperties: { type: number } }
+        windows: { type: array, items: { type: object } }
+        confidence: { type: object }
+        eligibility: { type: object }
+        collections: { type: array, items: { type: object } }
+        anomalyFlags: { type: array, items: { type: object } }
+        snapshots: { type: object }
+        formula: { type: string }
+        lastUpdated: { type: string, format: date }
+        demoMode: { type: boolean }

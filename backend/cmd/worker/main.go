@@ -3,7 +3,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log/slog"
 	"os"
@@ -177,19 +176,13 @@ func (d *dispatcher) dispatch(ctx context.Context) {
 
 	queued := 0
 	for _, repo := range due {
-		payload := jobs.CollectPayload{Owner: repo.OwnerLogin, Name: repo.Name}
-		encoded, err := marshalPayload(payload)
-		if err != nil {
-			continue
-		}
-
-		_, err = d.jobs.Enqueue(ctx, repository.EnqueueInput{
+		_, err := d.jobs.Enqueue(ctx, repository.EnqueueInput{
 			Kind:         repository.JobCollectRepository,
 			RepositoryID: &repo.ID,
 			Priority:     priorityForTier(repo.TrackingTier),
 			RunAfter:     now,
 			MaxAttempts:  3,
-			Payload:      encoded,
+			Payload:      repository.CollectPayload{Owner: repo.OwnerLogin, Name: repo.Name}.Encode(),
 			// One active collection job per repository at a time.
 			DedupeKey: "collect:" + repo.RepoName().Lower().String(),
 		})
@@ -213,5 +206,3 @@ func priorityForTier(tier repository.TrackingTier) int {
 		return 10
 	}
 }
-
-func marshalPayload(v any) ([]byte, error) { return json.Marshal(v) }

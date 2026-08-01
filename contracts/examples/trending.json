@@ -1,0 +1,55 @@
+{
+  "data": [
+    {
+      "repository": {
+        "owner": "orbit-labs",
+        "name": "signal-kit",
+        "fullName": "orbit-labs/signal-kit",
+        "description": "Typed event streams for distributed Go services",
+        "url": "https://github.com/orbit-labs/signal-kit",
+        "homepageUrl": null,
+        "avatarUrl": null,
+        "language": "Go",
+        "topics": ["developer-tools", "distributed-systems", "events"],
+        "license": "Apache-2.0",
+        "stars": 1240,
+        "forks": 81,
+        "openIssues": 12,
+        "isArchived": false,
+        "isFork": false,
+        "createdAt": "2026-01-03T12:00:00Z",
+        "pushedAt": "2026-08-01T08:00:00Z"
+      },
+      "momentum": {
+        "window": "24h",
+        "score": 88.4,
+        "rank": 1,
+        "starDelta": 44,
+        "starVelocity": 1.833,
+        "relativeGrowth": 0.0368,
+        "acceleration": 0.21,
+        "forkDelta": 3,
+        "forkVelocity": 0.125,
+        "activityScore": 0.94,
+        "freshnessScore": 0.75,
+        "confidence": 0.96,
+        "confidenceLabel": "high",
+        "reasons": ["Gained 44 stars in 24 hours."],
+        "flags": [],
+        "collections": ["daily"],
+        "formulaVersion": "momentum-v1",
+        "scoredAt": "2026-08-01T12:00:00Z"
+      },
+      "sparkline": [1196, 1204, 1217, 1240]
+    }
+  ],
+  "meta": {
+    "window": "24h",
+    "collection": "daily",
+    "generatedAt": "2026-08-01T12:00:00Z",
+    "demoMode": true,
+    "resultCount": 1,
+    "formulaVersion": "momentum-v1"
+  },
+  "links": { "nextCursor": null }
+}

@@ -1,0 +1,36 @@
+name: Feature request
+description: Propose a focused product or operator improvement
+labels: [enhancement, needs-triage]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      {
+        label: Problem,
+        description: "Who is blocked and what outcome is missing?",
+      }
+    validations: { required: true }
+  - type: textarea
+    id: proposal
+    attributes:
+      {
+        label: Proposed solution,
+        description: Include API,
+        privacy,
+        scoring,
+        migration,
+        and operations impact where relevant.,
+      }
+    validations: { required: true }
+  - type: textarea
+    id: alternatives
+    attributes: { label: Alternatives considered }
+  - type: checkboxes
+    id: boundaries
+    attributes:
+      label: Product boundaries
+      options:
+        - label: This does not require individual stargazer tracking or Trending HTML scraping.
+          required: true
+        - label: This does not introduce authentication, payments, AI ranking, Redis, or Kubernetes without a separate architecture decision.
+          required: true
