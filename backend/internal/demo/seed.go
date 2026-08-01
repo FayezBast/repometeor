@@ -91,6 +91,17 @@ func (s *Seeder) Seed(ctx context.Context, referenceTime time.Time, bucketInterv
 			return result, fmt.Errorf("set tracking state for %s: %w", demoRepo.FullName(), err)
 		}
 
+		// Tracking must appear to have begun when this repository's history
+		// begins, not when the seeder ran. Otherwise every demo repository
+		// would carry the "recently discovered" flag and a depressed
+		// confidence, which would misrepresent what the rankings look like in
+		// a real deployment.
+		if snapshots := dataset.Snapshots[i]; len(snapshots) > 0 {
+			if err := s.repositories.SetFirstSeenAt(ctx, stored.ID, snapshots[0].At); err != nil {
+				return result, fmt.Errorf("set first seen for %s: %w", demoRepo.FullName(), err)
+			}
+		}
+
 		for _, snapshot := range dataset.Snapshots[i] {
 			if _, err := s.snapshots.Upsert(ctx, repository.Snapshot{
 				RepositoryID:    stored.ID,

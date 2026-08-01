@@ -33,6 +33,10 @@ func scanSnapshot(row pgx.Row) (Snapshot, error) {
 	if err != nil {
 		return Snapshot{}, database.NormaliseNotFound(err)
 	}
+	// See normaliseRepositoryTimes: every emitted timestamp is UTC.
+	s.CapturedAt = s.CapturedAt.UTC()
+	s.BucketStart = s.BucketStart.UTC()
+	s.LatestReleaseAt = utcPtr(s.LatestReleaseAt)
 	return s, nil
 }
 

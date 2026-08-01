@@ -47,6 +47,7 @@ func scanScore(row pgx.Row) (MomentumScore, error) {
 			return MomentumScore{}, fmt.Errorf("decode feature_data: %w", err)
 		}
 	}
+	s.ScoredAt = s.ScoredAt.UTC()
 	return s, nil
 }
 
@@ -297,6 +298,7 @@ func (s *Scores) Trending(ctx context.Context, f TrendingFilter) ([]RankedReposi
 			}
 		}
 		sc.ScoredAt = sc.ScoredAt.UTC()
+		normaliseRepositoryTimes(&r)
 		out = append(out, RankedRepository{Repository: r, Score: sc})
 	}
 	if err := rows.Err(); err != nil {

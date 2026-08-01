@@ -72,7 +72,26 @@ func scanRepository(row pgx.Row) (Repository, error) {
 	if err != nil {
 		return Repository{}, database.NormaliseNotFound(err)
 	}
+	normaliseRepositoryTimes(&r)
 	return r, nil
+}
+
+// normaliseRepositoryTimes converts every timestamp to UTC.
+//
+// pgx returns timestamptz values in the connection's location, which is not
+// necessarily UTC on a developer machine. RepoMeteor's contract is that every
+// timestamp it emits is UTC RFC 3339, so normalisation happens once here rather
+// than being repeated at each serialisation site.
+func normaliseRepositoryTimes(r *Repository) {
+	r.CreatedAt = r.CreatedAt.UTC()
+	r.FirstSeenAt = r.FirstSeenAt.UTC()
+	r.CreatedRecordAt = r.CreatedRecordAt.UTC()
+	r.UpdatedRecordAt = r.UpdatedRecordAt.UTC()
+	r.GitHubUpdatedAt = utcPtr(r.GitHubUpdatedAt)
+	r.PushedAt = utcPtr(r.PushedAt)
+	r.LatestReleaseAt = utcPtr(r.LatestReleaseAt)
+	r.LastCheckedAt = utcPtr(r.LastCheckedAt)
+	r.NextCheckAt = utcPtr(r.NextCheckAt)
 }
 
 // GetByName resolves a repository case-insensitively by owner and name.
@@ -259,6 +278,23 @@ func (s *Repositories) MarkFailure(ctx context.Context, id int64, nextCheckAt ti
         RETURNING consecutive_failures`,
 		id, nextCheckAt.UTC(), truncateForStorage(reason, 500)).Scan(&failures)
 	return failures, err
+}
+
+// SetFirstSeenAt overrides when RepoMeteor started tracking a repository.
+//
+// It exists for the demo seeder and for administrative backfills, where history
+// is written for a period before the row was created. Live collection never
+// calls it: for a real repository, first_seen_at is exactly when the row was
+// inserted, and moving it would misrepresent how much history actually exists.
+func (s *Repositories) SetFirstSeenAt(ctx context.Context, id int64, firstSeenAt time.Time) error {
+	ctx, cancel := s.db.Context(ctx)
+	defer cancel()
+
+	_, err := s.db.Pool().Exec(ctx, `
+        UPDATE repositories
+        SET first_seen_at = $2, updated_record_at = NOW()
+        WHERE id = $1`, id, firstSeenAt.UTC())
+	return err
 }
 
 // SetTrackingState transitions a repository's lifecycle state.
