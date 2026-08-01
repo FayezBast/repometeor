@@ -146,9 +146,10 @@ Two notes on the environment rather than the code:
   so it runs unchanged on both. Integration coverage is therefore genuine, and
   the 16 pin remains the supported deployment target.
 
-- **Docker Compose fresh start not executed.** The stack's base image pulls did
-  not complete on this connection. Everything compose would run has been
-  verified directly instead: migrations apply from an empty database and roll
-  back, the seeder and scorer run to completion, the API serves every documented
-  route, and the web production build is the same one the image would start. The
-  exact command and expected result are in `TASKS.md` §Phase 10.
+- **Docker Compose fresh start verified in CI, not locally.** The base image
+  pulls did not complete on the development connection, so the stack was never
+  started there. It is verified instead by the `containers-and-smoke` CI job,
+  which runs `cp .env.example .env`, `docker compose up --build --detach --wait`
+  and `./scripts/smoke.sh` from an empty state on a clean runner. That job
+  passed on the first push, so the documented first-run sequence is confirmed
+  working end to end on a machine that had never seen the project.

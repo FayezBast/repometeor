@@ -6,8 +6,8 @@ Legend: `[ ]` todo · `[x]` done · `[~]` done with a documented limitation
 
 Status verified 2026-08-01 by executing every check on this machine against a real
 PostgreSQL 14 instance, a running API, and a production Next.js build. Phases 0-9 are
-complete. Phase 10 is complete except the Docker Compose fresh start, which is recorded
-below with the exact command and reason. Measured totals: 272 Go unit test functions
+complete, including the Docker Compose fresh start, which is verified by the
+`containers-and-smoke` CI job on a clean runner. Measured totals: 272 Go unit test functions
 (380 assertions including subtests), 125 Go integration test functions (147 including
 subtests) against PostgreSQL, 11 web/CLI unit tests, 38 Playwright E2E tests across
 desktop and mobile with zero axe violations, 6 API smoke assertions, and a valid
@@ -162,23 +162,22 @@ All commands below were executed from the repository root and passed.
 - [x] `make smoke` — 6 API assertions plus the web home page
 - [x] `make test-e2e` — 38 passed, 8 skipped (project-scoped), 0 failed
 - [x] `make verify` — the full chain above
-- [ ] `docker compose up --build` fresh start
+- [x] `docker compose up --build` fresh start — verified in CI
 
-### Outstanding: Docker Compose fresh start
+### Docker Compose fresh start
 
-Not executed. The compose stack pulls `postgres:16.10-alpine`, `golang:1.25.6-alpine`
-and `node` base images; the image pull did not complete on this connection within the
-session. Everything the stack would run has been verified directly instead: migrations
-apply from an empty database, the seeder and scorer run, the API serves every documented
-route, and the web build is the same production build compose would start.
-
-To verify manually:
+Verified on a clean GitHub-hosted Ubuntu runner by the `containers-and-smoke`
+job in `.github/workflows/ci.yml`, which performs exactly the documented
+first-run sequence from an empty state:
 
 ```sh
 cp .env.example .env
-docker compose up --build
+docker compose up --build --detach --wait
 ./scripts/smoke.sh
 ```
 
-Expected: web on http://localhost:3000, API on http://localhost:8080, demo data visible,
-and `smoke.sh` exiting 0.
+All steps succeeded: the images built, every service reached its healthcheck
+via `--wait`, and the smoke script passed against both the API and the web app.
+The same sequence was not run on the development machine because the base image
+pulls did not complete on that connection; the CI run is the authoritative
+evidence.
