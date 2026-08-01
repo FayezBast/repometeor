@@ -7,7 +7,7 @@ const outputDir = fileURLToPath(new URL("../docs/assets/", import.meta.url));
 
 await mkdir(outputDir, { recursive: true });
 
-const browser = await chromium.launch();
+const browser = await chromium.launch({ channel: "chromium" });
 try {
   const page = await browser.newPage({
     viewport: { width: 1440, height: 1000 },

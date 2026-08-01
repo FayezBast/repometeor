@@ -8,7 +8,7 @@ RepoMeteor should launch only after the fresh demo stack and live collection pat
 - [ ] Create and secure the GitHub organization; configure branch protection and private vulnerability reporting.
 - [ ] Configure production GitHub token, database backups/restore drill, CORS, trusted proxies, shared rate-limit key, and status monitoring.
 - [ ] Complete privacy, security, dependency, accessibility, keyboard, reduced-motion, mobile, and overflow reviews.
-- [ ] Capture deterministic demo dashboard/detail screenshots and Open Graph images with no secrets or personal data.
+- [x] Capture deterministic demo dashboard/detail screenshots and Open Graph images with no secrets or personal data. (`docs/assets/dashboard.png`, `docs/assets/repository.png`; regenerate with `pnpm capture:screenshots`.)
 - [ ] Verify public API/canonical web URLs, badge URL, Atom feed, CLI package contents, and package name ownership.
 - [ ] Run the full CI/fresh-start verification and archive exact results.
 - [ ] Prepare the GitHub v0.1 release, issue labels, contributor docs, and good-first issues.

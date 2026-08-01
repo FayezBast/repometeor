@@ -19,7 +19,11 @@ GitHub Trending.
 
 The dashboard, public API, CLI, Atom feed, and SVG badges all expose the same deterministic scores and plain-language reasons. Demo mode ships with visibly labeled fictional data, so the complete product can run without a token or outbound GitHub traffic.
 
-> Screenshots will be captured from fixed demo data after the full container stack passes verification. Run `pnpm capture:screenshots` once the stack is available; no broken placeholder image is linked here.
+![The RepoMeteor dashboard ranking demo repositories by 24-hour momentum](docs/assets/dashboard.png)
+
+![A repository page showing momentum, observed star history, and the deterministic reasons behind the score](docs/assets/repository.png)
+
+<sub>Captured from the deterministic demo dataset with `pnpm capture:screenshots`. Every repository shown is fictional.</sub>
 
 ## Why RepoMeteor exists
 
