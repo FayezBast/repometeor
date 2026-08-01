@@ -27,11 +27,11 @@ jobs:
         language: [go, javascript-typescript]
     steps:
       - uses: actions/checkout@v5
-      - uses: github/codeql-action/init@v4
+      - uses: github/codeql-action/init@v4.37.3
         with:
           languages: ${{ matrix.language }}
-      - uses: github/codeql-action/autobuild@v4
-      - uses: github/codeql-action/analyze@v4
+      - uses: github/codeql-action/autobuild@v4.37.3
+      - uses: github/codeql-action/analyze@v4.37.3
 
   dependency-review:
     # Dependency review has the same GHAS requirement on private repositories.
