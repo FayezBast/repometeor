@@ -6,6 +6,92 @@ const number = new Intl.NumberFormat("en");
 const plus = (value: number) =>
   `${value >= 0 ? "+" : ""}${number.format(value)}`;
 
+// Tab, line feed, vertical tab, form feed and carriage return. These collapse
+// to a single space rather than being dropped, so the words on either side stay
+// separated.
+function isSpacing(code: number) {
+  return code >= 0x09 && code <= 0x0d;
+}
+
+// Code points a terminal acts on instead of printing, excluding the C0 range.
+// Split out from isUnsafe because JSON.stringify escapes C0 itself, so this is
+// exactly the set it leaves behind as literal bytes.
+//
+// Written as ranges rather than as a character class so that the source itself
+// stays free of the very characters it is guarding against.
+function isUnsafeAboveC0(code: number) {
+  return (
+    // DEL, and the C1 controls. U+009B is a single-character CSI that some
+    // terminals honour exactly as they honour "ESC [".
+    (code >= 0x7f && code <= 0x9f) ||
+    // Zero-width characters, which hide content in plain sight.
+    (code >= 0x200b && code <= 0x200d) ||
+    // Bidirectional overrides and isolates: the "Trojan Source" trick, where
+    // displayed order differs from stored order.
+    (code >= 0x202a && code <= 0x202e) ||
+    (code >= 0x2066 && code <= 0x2069) ||
+    // Byte-order mark.
+    code === 0xfeff
+  );
+}
+
+function isUnsafe(code: number) {
+  // C0 controls, which include ESC — the lead byte of every escape sequence.
+  return code <= 0x1f || isUnsafeAboveC0(code);
+}
+
+/**
+ * Renders a string supplied by the API as inert text.
+ *
+ * Every value here is printed straight to a terminal, and these values
+ * originate with whoever owns the repository being described. Left alone, an
+ * escape sequence in a description can erase the lines around it and repaint
+ * them — enough to forge a convincing instruction to run a command. The API
+ * strips these on ingest, but `--api-url` points this CLI at an arbitrary
+ * server, so the terminal boundary is enforced here rather than assumed
+ * upstream.
+ */
+export function text(value: string) {
+  let out = "";
+  for (const character of value) {
+    const code = character.codePointAt(0) ?? 0;
+    if (isSpacing(code)) {
+      if (!out.endsWith(" ")) out += " ";
+      continue;
+    }
+    if (isUnsafe(code)) continue;
+    out += character;
+  }
+  return out.trim();
+}
+
+/**
+ * Encodes a value as JSON that is inert when written to a terminal.
+ *
+ * `JSON.stringify` escapes the C0 controls, so it is tempting to treat its
+ * output as already safe. It is not: DEL, the C1 controls, and the
+ * bidirectional and zero-width characters all survive as literal bytes, and
+ * U+009B is a single-character CSI that a terminal acts on exactly as it acts
+ * on "ESC [". `--json` goes to the same terminal as everything else whenever it
+ * is not redirected, so those are re-encoded here.
+ *
+ * Re-encoding rather than stripping keeps the output lossless — every JSON
+ * parser decodes \uXXXX back to the same string — so a consumer piping this
+ * into `jq` still sees exactly what the API sent. Only the terminal is denied
+ * something to act on. C0 is deliberately not touched, because the only C0 left
+ * in the string is the newline this function's own indentation emits.
+ */
+export function encodeJSON(value: unknown) {
+  let out = "";
+  for (const character of JSON.stringify(value, null, 2)) {
+    const code = character.codePointAt(0) ?? 0;
+    out += isUnsafeAboveC0(code)
+      ? `\\u${code.toString(16).padStart(4, "0")}`
+      : character;
+  }
+  return out;
+}
+
 export function formatTrending(data: Trending, color: boolean) {
   const chalk = new Chalk({ level: color ? 1 : 0 });
   const table = new Table({
@@ -13,7 +99,7 @@ export function formatTrending(data: Trending, color: boolean) {
       "#",
       "Repository",
       "Stars",
-      `+${data.meta.window}`,
+      `+${text(data.meta.window)}`,
       "Score",
       "Confidence",
     ].map((v) => chalk.dim(v)),
@@ -40,31 +126,34 @@ export function formatTrending(data: Trending, color: boolean) {
   for (const item of data.data) {
     table.push([
       item.momentum.rank ?? "—",
-      chalk.bold(item.repository.fullName),
+      chalk.bold(text(item.repository.fullName)),
       number.format(item.repository.stars),
       chalk.green(plus(item.momentum.starDelta)),
       chalk.yellow(item.momentum.score.toFixed(1)),
-      item.momentum.confidenceLabel,
+      text(item.momentum.confidenceLabel),
     ]);
   }
-  return `${chalk.bold(`RepoMeteor · ${data.meta.collection} · ${data.meta.window}`)}\n${chalk.dim(`Updated ${data.meta.generatedAt}${data.meta.demoMode ? " · DEMO DATA" : ""}`)}\n\n${table.toString()}`;
+  return `${chalk.bold(`RepoMeteor · ${text(data.meta.collection)} · ${text(data.meta.window)}`)}\n${chalk.dim(`Updated ${text(data.meta.generatedAt)}${data.meta.demoMode ? " · DEMO DATA" : ""}`)}\n\n${table.toString()}`;
 }
 
 export function formatDetail(data: Detail, color: boolean) {
   const chalk = new Chalk({ level: color ? 1 : 0 });
   const momentum = data.momentum["24h"] ?? Object.values(data.momentum)[0];
+  const language = data.repository.language
+    ? text(data.repository.language)
+    : "";
   const rows = [
     ["Stars", number.format(data.repository.stars)],
     ["Forks", number.format(data.repository.forks)],
-    ["Language", data.repository.language ?? "Not specified"],
-    ["Tracking", `${data.tracking.state} · ${data.tracking.tier}`],
+    ["Language", language || "Not specified"],
+    ["Tracking", `${text(data.tracking.state)} · ${text(data.tracking.tier)}`],
   ];
   if (momentum)
     rows.unshift([
       "Momentum",
-      `${chalk.yellow(momentum.score.toFixed(1))} · ${plus(momentum.starDelta)} ${momentum.window} · ${momentum.confidenceLabel}`,
+      `${chalk.yellow(momentum.score.toFixed(1))} · ${plus(momentum.starDelta)} ${text(momentum.window)} · ${text(momentum.confidenceLabel)}`,
     ]);
-  return `${chalk.bold(data.repository.fullName)}\n${data.repository.description}\n\n${rows.map(([key, value]) => `${chalk.dim(key.padEnd(12))} ${value}`).join("\n")}${momentum?.reasons.length ? `\n\n${chalk.bold("Why it is rising")}\n${momentum.reasons.map((reason) => `• ${reason}`).join("\n")}` : ""}`;
+  return `${chalk.bold(text(data.repository.fullName))}\n${text(data.repository.description)}\n\n${rows.map(([key, value]) => `${chalk.dim(key.padEnd(12))} ${value}`).join("\n")}${momentum?.reasons.length ? `\n\n${chalk.bold("Why it is rising")}\n${momentum.reasons.map((reason) => `• ${text(reason)}`).join("\n")}` : ""}`;
 }
 
 export function formatComparison(data: Comparison, color: boolean) {
@@ -76,16 +165,16 @@ export function formatComparison(data: Comparison, color: boolean) {
   });
   for (const item of data.data)
     table.push([
-      item.repository.fullName,
+      text(item.repository.fullName),
       number.format(item.repository.stars),
       plus(item.summary.absoluteGrowth),
       `${(item.summary.relativeGrowth * 100).toFixed(1)}%`,
       item.momentum?.score.toFixed(1) ?? "—",
     ]);
-  return `${chalk.bold(`RepoMeteor comparison · ${data.meta.window}`)}\n\n${table.toString()}`;
+  return `${chalk.bold(`RepoMeteor comparison · ${text(data.meta.window)}`)}\n\n${table.toString()}`;
 }
 
 export function formatTrack(data: Track, color: boolean) {
   const chalk = new Chalk({ level: color ? 1 : 0 });
-  return `${chalk.green("✓")} ${chalk.bold(data.repository)}\n${data.message}${data.webUrl ? `\n${data.webUrl}` : ""}`;
+  return `${chalk.green("✓")} ${chalk.bold(text(data.repository))}\n${text(data.message)}${data.webUrl ? `\n${text(data.webUrl)}` : ""}`;
 }

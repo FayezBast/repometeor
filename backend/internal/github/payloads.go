@@ -74,18 +74,26 @@ func (p repositoryPayload) toRepository() (Repository, error) {
 		fullName = owner + "/" + name
 	}
 
+	// Identity fields address GitHub's API and build canonical URLs, so a
+	// control character in one is not cosmetic damage that can be cleaned up —
+	// it means the payload does not describe a repository GitHub could have
+	// returned. Reject rather than silently rewrite an identifier.
+	if containsControl(owner) || containsControl(name) || containsControl(fullName) {
+		return Repository{}, errors.New("repository payload has a control character in its name")
+	}
+
 	repo := Repository{
 		ID:              p.ID,
 		NodeID:          p.NodeID,
 		Owner:           owner,
 		Name:            name,
 		FullName:        fullName,
-		Description:     strings.TrimSpace(p.Description),
+		Description:     sanitiseDisplayText(p.Description),
 		HTMLURL:         p.HTMLURL,
-		HomepageURL:     strings.TrimSpace(p.Homepage),
+		HomepageURL:     sanitiseDisplayText(p.Homepage),
 		AvatarURL:       p.Owner.AvatarURL,
-		DefaultBranch:   p.DefaultBranch,
-		PrimaryLanguage: p.Language,
+		DefaultBranch:   sanitiseDisplayText(p.DefaultBranch),
+		PrimaryLanguage: sanitiseDisplayText(p.Language),
 		Topics:          normaliseTopics(p.Topics),
 		Stars:           maxInt(p.StargazersCount, 0),
 		Forks:           maxInt(p.ForksCount, 0),
@@ -102,7 +110,7 @@ func (p repositoryPayload) toRepository() (Repository, error) {
 	}
 
 	if p.License != nil && p.License.SPDXID != "" && p.License.SPDXID != "NOASSERTION" {
-		repo.LicenseSPDX = p.License.SPDXID
+		repo.LicenseSPDX = sanitiseDisplayText(p.License.SPDXID)
 	}
 	if repo.HTMLURL == "" {
 		repo.HTMLURL = "https://github.com/" + fullName
@@ -114,6 +122,85 @@ func (p repositoryPayload) toRepository() (Repository, error) {
 	}
 
 	return repo, nil
+}
+
+// sanitiseDisplayText removes characters that let remote text drive a renderer
+// rather than merely appear in it.
+//
+// A description or homepage is free-form text written by whoever owns the
+// repository, and RepoMeteor echoes it into a terminal via the CLI, into an
+// Atom feed and into the web UI. Terminal escape sequences can erase and
+// repaint the lines around them — enough to forge a convincing instruction to
+// run a command — and bidirectional overrides can reorder text without
+// changing it. Both are stripped here, where the value enters RepoMeteor, so
+// that no consumer has to remember to do it.
+//
+// Stripping rather than rejecting is deliberate: a stray control character in
+// a description should cost that character, not the repository's place in the
+// rankings. Identity fields are held to the stricter rule in toRepository.
+func sanitiseDisplayText(s string) string {
+	var b strings.Builder
+	b.Grow(len(s))
+
+	for _, r := range s {
+		switch {
+		// Horizontal and vertical whitespace collapses to a space: these values
+		// are rendered on one line, and dropping the character outright would
+		// run the words on either side together.
+		case r == '\t' || r == '\n' || r == '\r':
+			b.WriteRune(' ')
+		// C0 controls and DEL, which include ESC — the lead byte of every
+		// terminal escape sequence.
+		case r < 0x20 || r == 0x7f:
+		// C1 controls. U+009B is a single-character CSI that some terminals
+		// honour exactly as they honour "ESC [".
+		case r >= 0x80 && r <= 0x9f:
+		// Bidirectional overrides and isolates: the "Trojan Source" trick, where
+		// displayed order differs from stored order.
+		case r >= 0x202a && r <= 0x202e, r >= 0x2066 && r <= 0x2069:
+		// Zero-width characters and the byte-order mark, which hide content in
+		// plain sight.
+		case r == 0x200b, r == 0x200c, r == 0x200d, r == 0xfeff:
+		default:
+			b.WriteRune(r)
+		}
+	}
+
+	return strings.TrimSpace(collapseSpaces(b.String()))
+}
+
+// collapseSpaces reduces runs of spaces left behind by sanitiseDisplayText to a
+// single space, so that a multi-line description still reads as one line.
+func collapseSpaces(s string) string {
+	if !strings.Contains(s, "  ") {
+		return s
+	}
+
+	var b strings.Builder
+	b.Grow(len(s))
+	previousWasSpace := false
+	for _, r := range s {
+		if r == ' ' {
+			if previousWasSpace {
+				continue
+			}
+			previousWasSpace = true
+		} else {
+			previousWasSpace = false
+		}
+		b.WriteRune(r)
+	}
+	return b.String()
+}
+
+// containsControl reports whether s holds a C0 control character or DEL.
+func containsControl(s string) bool {
+	for _, r := range s {
+		if r < 0x20 || r == 0x7f {
+			return true
+		}
+	}
+	return false
 }
 
 // normaliseTopics lower-cases, de-duplicates and bounds the topic list. GitHub

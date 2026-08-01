@@ -4,3 +4,22 @@ packages:
 onlyBuiltDependencies:
   - esbuild
   - sharp
+
+# Security overrides for transitive dependencies.
+#
+# Each of these is pulled in by a package that still pins a vulnerable range and
+# has no release that lifts it — next@16.2.12 is the current stable and carries
+# postcss 8.4.31 and sharp 0.34.5, and tsup carries esbuild 0.27.x. All three are
+# build-time only and none are reachable from the published CLI, but pinning the
+# patched floor here keeps `pnpm audit` clean and honest rather than
+# permanently ignored.
+#
+# Revisit when next ships a release that raises its own floors: an override that
+# outlives its cause is how a downgrade sneaks back in unnoticed.
+overrides:
+  # GHSA-6g55-p6wh-862q, GHSA-r28c-9q8g-f849, GHSA-qx2v-qp2m-jg93
+  postcss: ">=8.5.18"
+  # GHSA-f88m-g3jw-g9cj (inherited libvips CVEs)
+  sharp: ">=0.35.0"
+  # GHSA-g7r4-m6w7-qqqr
+  esbuild: ">=0.28.1"

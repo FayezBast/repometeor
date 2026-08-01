@@ -22,3 +22,8 @@ All notable changes follow Keep a Changelog and semantic versioning. The project
 ### Security
 
 - Exact-origin CORS, bounded bodies and queries, structured redacted logs, HMAC-based durable tracking limits, XML escaping, and non-root/read-only-compatible containers.
+- Stripped terminal escape sequences, C1 controls, bidirectional overrides and zero-width characters from GitHub-supplied display text. A repository description is written by whoever owns the repository, and the CLI printed it verbatim, so a crafted description could erase and repaint the surrounding terminal lines — enough to forge an instruction to run a command. Sanitisation runs both on ingest and at CLI render, because `--api-url` points the CLI at an arbitrary server.
+- Closed the CLI's two remaining unsanitised output paths. `--json` relied on `JSON.stringify`, which escapes the C0 controls but emits DEL, the C1 controls and the bidirectional and zero-width characters literally — and U+009B is a single-character CSI a terminal acts on exactly as it acts on `ESC [`; these are now re-encoded as `\uXXXX`, which keeps the output lossless for downstream parsers. Error text written to stderr is frequently the API's own problem detail, so a hostile server could forge a `repometeor:` prefix of its own; it is now sanitised before it is written.
+- Rejected repository payloads carrying control characters in an owner or name, which cannot be cleaned up without changing the identity they address.
+- Raised Go to 1.25.12 and quic-go to v0.59.1, clearing all 14 vulnerabilities `govulncheck` reported as reachable.
+- Pinned patched floors for `postcss`, `sharp` and `esbuild`, which arrive through `next` and `tsup` at vulnerable versions with no upstream release that lifts them.
