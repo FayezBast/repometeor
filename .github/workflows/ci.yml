@@ -46,7 +46,12 @@ jobs:
       - name: PostgreSQL integration tests
         env:
           REPOMETEOR_TEST_DATABASE_URL: postgres://repometeor:repometeor@127.0.0.1:5432/repometeor_test?sslmode=disable
-        run: go test -tags=integration ./internal/repository ./internal/api
+        # -p 1 is required, not an optimisation. Both suites share one database
+        # and isolate themselves by truncating every table on setup; Go tests
+        # packages in parallel by default, so without this one suite truncates
+        # while the other is mid-seed, producing deadlocks and foreign key
+        # violations. Keep this in step with the test-integration Make target.
+        run: go test -tags=integration -p 1 ./internal/repository ./internal/api
       - name: Build commands
         run: go build ./cmd/...
 

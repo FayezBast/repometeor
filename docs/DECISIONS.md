@@ -114,6 +114,19 @@ chrome-headless-shell artefact, leaving `playwright install chromium` as the
 only download the suite needs. Add a WebKit project when a test genuinely
 depends on Safari rendering.
 
+## 2026-08-01 — CodeQL and dependency review require a public repo or GHAS
+
+Code scanning uploads and dependency review need GitHub Advanced Security on a
+private repository. On the first push to a private repo the CodeQL analysis ran
+to completion and then failed at the upload step with "Resource not accessible
+by integration", turning the Security workflow permanently red for a reason
+that has nothing to do with the code.
+
+Both jobs are therefore gated on `github.event.repository.private == false`.
+They skip cleanly while the repository is private and run in full the moment it
+becomes public or GHAS is enabled. `govulncheck` and `pnpm audit` continue to
+run in every configuration as advisory, non-blocking reports.
+
 ## Environment verification status
 
 Verified 2026-08-01 on macOS 15 (arm64) with Go 1.25.6, Node 26.4.0, pnpm

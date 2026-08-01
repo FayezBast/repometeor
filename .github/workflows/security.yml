@@ -13,6 +13,13 @@ permissions:
 
 jobs:
   codeql:
+    # Code scanning uploads require GitHub Advanced Security on a private
+    # repository. Without it the analysis runs to completion and then fails at
+    # the upload step with "Resource not accessible by integration", which would
+    # leave Security permanently red for no security reason. Skipping cleanly on
+    # private repositories keeps the signal honest; the job runs in full as soon
+    # as the repository is public or GHAS is enabled.
+    if: github.event.repository.private == false
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -27,7 +34,8 @@ jobs:
       - uses: github/codeql-action/analyze@v4
 
   dependency-review:
-    if: github.event_name == 'pull_request'
+    # Dependency review has the same GHAS requirement on private repositories.
+    if: github.event_name == 'pull_request' && github.event.repository.private == false
     runs-on: ubuntu-latest
     permissions:
       contents: read
