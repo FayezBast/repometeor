@@ -13,13 +13,14 @@ function isSpacing(code: number) {
   return code >= 0x09 && code <= 0x0d;
 }
 
-// Code points a terminal acts on instead of printing. Written as ranges rather
-// than as a character class so that the source itself stays free of the very
-// characters it is guarding against.
-function isUnsafe(code: number) {
+// Code points a terminal acts on instead of printing, excluding the C0 range.
+// Split out from isUnsafe because JSON.stringify escapes C0 itself, so this is
+// exactly the set it leaves behind as literal bytes.
+//
+// Written as ranges rather than as a character class so that the source itself
+// stays free of the very characters it is guarding against.
+function isUnsafeAboveC0(code: number) {
   return (
-    // C0 controls, which include ESC — the lead byte of every escape sequence.
-    code <= 0x1f ||
     // DEL, and the C1 controls. U+009B is a single-character CSI that some
     // terminals honour exactly as they honour "ESC [".
     (code >= 0x7f && code <= 0x9f) ||
@@ -32,6 +33,11 @@ function isUnsafe(code: number) {
     // Byte-order mark.
     code === 0xfeff
   );
+}
+
+function isUnsafe(code: number) {
+  // C0 controls, which include ESC — the lead byte of every escape sequence.
+  return code <= 0x1f || isUnsafeAboveC0(code);
 }
 
 /**
@@ -57,6 +63,33 @@ export function text(value: string) {
     out += character;
   }
   return out.trim();
+}
+
+/**
+ * Encodes a value as JSON that is inert when written to a terminal.
+ *
+ * `JSON.stringify` escapes the C0 controls, so it is tempting to treat its
+ * output as already safe. It is not: DEL, the C1 controls, and the
+ * bidirectional and zero-width characters all survive as literal bytes, and
+ * U+009B is a single-character CSI that a terminal acts on exactly as it acts
+ * on "ESC [". `--json` goes to the same terminal as everything else whenever it
+ * is not redirected, so those are re-encoded here.
+ *
+ * Re-encoding rather than stripping keeps the output lossless — every JSON
+ * parser decodes \uXXXX back to the same string — so a consumer piping this
+ * into `jq` still sees exactly what the API sent. Only the terminal is denied
+ * something to act on. C0 is deliberately not touched, because the only C0 left
+ * in the string is the newline this function's own indentation emits.
+ */
+export function encodeJSON(value: unknown) {
+  let out = "";
+  for (const character of JSON.stringify(value, null, 2)) {
+    const code = character.codePointAt(0) ?? 0;
+    out += isUnsafeAboveC0(code)
+      ? `\\u${code.toString(16).padStart(4, "0")}`
+      : character;
+  }
+  return out;
 }
 
 export function formatTrending(data: Trending, color: boolean) {

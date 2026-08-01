@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  encodeJSON,
   formatDetail,
   formatTrack,
   formatTrending,
@@ -150,5 +151,48 @@ describe("rendering never emits API-supplied escapes", () => {
     // Sanitisation must not disarm the CLI's own styling, which is applied
     // after the API's text has been made inert.
     expect(formatDetail(detail(), true)).toContain(esc);
+  });
+});
+
+describe("encodeJSON", () => {
+  // JSON.stringify escapes the C0 controls but not these, so --json would
+  // otherwise carry them to the terminal untouched.
+  it.each([
+    ["C1 CSI", 0x9b],
+    ["DEL", 0x7f],
+    ["bidi override", 0x202e],
+    ["bidi isolate", 0x2066],
+    ["zero width space", 0x200b],
+    ["byte order mark", 0xfeff],
+  ])("re-encodes %s as an escape", (_name, code) => {
+    const encoded = encodeJSON({ description: `before${point(code)}after` });
+
+    expect(encoded).not.toContain(point(code));
+    expect(encoded).toContain(`\\u${code.toString(16).padStart(4, "0")}`);
+  });
+
+  it("escapes C0 controls, as JSON.stringify already does", () => {
+    expect(encodeJSON({ d: `a${esc}b` })).not.toContain(esc);
+  });
+
+  it("round-trips losslessly, so piping to a parser loses nothing", () => {
+    const hostile = {
+      description: `clean${point(0x9b)}[2K${point(0x202e)}reversed`,
+      nested: { reasons: [`hidden${point(0x200b)}text`] },
+      emoji: "🚀",
+      cjk: "日本語",
+    };
+
+    expect(JSON.parse(encodeJSON(hostile))).toEqual(hostile);
+  });
+
+  it("keeps its indentation readable", () => {
+    // The newlines JSON.stringify emits between indented lines are structural,
+    // not content, and must survive the pass that escapes C0-adjacent code
+    // points.
+    const encoded = encodeJSON({ a: 1, b: { c: 2 } });
+
+    expect(encoded).toContain("\n");
+    expect(encoded).toBe(JSON.stringify({ a: 1, b: { c: 2 } }, null, 2));
   });
 });

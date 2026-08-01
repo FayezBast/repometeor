@@ -1,10 +1,12 @@
 import { Command, InvalidArgumentError } from "commander";
 import { Client, ClientError } from "./client.js";
 import {
+  encodeJSON,
   formatComparison,
   formatDetail,
   formatTrack,
   formatTrending,
+  text,
 } from "./format.js";
 import { normalizeAPIURL, normalizeRepository } from "./normalize.js";
 
@@ -33,14 +35,15 @@ function context(program: Command) {
   return { options, apiURL, client: new Client(apiURL, options.timeout) };
 }
 
+// The human formatters sanitise each API-supplied field as they render it and
+// then add this CLI's own colour, so their output is written through unchanged.
+// JSON has no such pass, and goes through encodeJSON instead.
 function output(
   value: unknown,
   json: boolean | undefined,
   human: () => string,
 ) {
-  process.stdout.write(
-    json ? `${JSON.stringify(value, null, 2)}\n` : `${human()}\n`,
-  );
+  process.stdout.write(json ? `${encodeJSON(value)}\n` : `${human()}\n`);
 }
 
 export function buildProgram() {
@@ -134,7 +137,10 @@ export async function main(argv = process.argv) {
     return 0;
   } catch (error) {
     if (error instanceof ClientError) {
-      process.stderr.write(`repometeor: ${error.message}\n`);
+      // A ClientError message is frequently the API's own problem detail, which
+      // means a hostile server picks its text. Left raw it can erase this line
+      // and repaint it — including a forged "repometeor:" prefix of its own.
+      process.stderr.write(`repometeor: ${text(error.message)}\n`);
       return error.exitCode;
     }
     throw error;
