@@ -11,13 +11,13 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/repometeor/repometeor/backend/internal/clock"
-	"github.com/repometeor/repometeor/backend/internal/config"
-	"github.com/repometeor/repometeor/backend/internal/database"
-	"github.com/repometeor/repometeor/backend/internal/github"
-	"github.com/repometeor/repometeor/backend/internal/jobs"
-	"github.com/repometeor/repometeor/backend/internal/repository"
-	"github.com/repometeor/repometeor/backend/internal/telemetry"
+	"github.com/FayezBast/repometeor/backend/internal/clock"
+	"github.com/FayezBast/repometeor/backend/internal/config"
+	"github.com/FayezBast/repometeor/backend/internal/database"
+	"github.com/FayezBast/repometeor/backend/internal/github"
+	"github.com/FayezBast/repometeor/backend/internal/jobs"
+	"github.com/FayezBast/repometeor/backend/internal/repository"
+	"github.com/FayezBast/repometeor/backend/internal/telemetry"
 )
 
 // version is the worker build version.

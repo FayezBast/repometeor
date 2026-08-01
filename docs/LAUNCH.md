@@ -5,7 +5,8 @@ RepoMeteor should launch only after the fresh demo stack and live collection pat
 ## Prelaunch checklist
 
 - [ ] Check product/repository name, npm package name, domains, and trademarks.
-- [ ] Create and secure the GitHub organization; configure branch protection and private vulnerability reporting.
+- [x] Settle the canonical repository location. RepoMeteor ships from the maintainer's personal account, `github.com/FayezBast/repometeor`; the Go module path matches it. No `repometeor` organization is claimed or implied.
+- [ ] Configure branch protection on `main` and enable private vulnerability reporting.
 - [ ] Configure production GitHub token, database backups/restore drill, CORS, trusted proxies, shared rate-limit key, and status monitoring.
 - [ ] Complete privacy, security, dependency, accessibility, keyboard, reduced-motion, mobile, and overflow reviews.
 - [x] Capture deterministic demo dashboard/detail screenshots and Open Graph images with no secrets or personal data. (`docs/assets/dashboard.png`, `docs/assets/repository.png`; regenerate with `pnpm capture:screenshots`.)
@@ -14,7 +15,7 @@ RepoMeteor should launch only after the fresh demo stack and live collection pat
 - [ ] Prepare the GitHub v0.1 release, issue labels, contributor docs, and good-first issues.
 - [ ] Decide whether analytics are necessary; if added, document consent, data flow, retention, and privacy changes.
 
-The maintainer must complete domain, npm-name, GitHub-organization, and trademark checks before public launch. No domain or package ownership is assumed by this repository.
+The maintainer must complete domain, npm-name, and trademark checks before public launch. No domain or package ownership is assumed by this repository, and no GitHub organization name is claimed.
 
 ## Repository metadata
 

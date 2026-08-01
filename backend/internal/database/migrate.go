@@ -14,7 +14,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/repometeor/repometeor/backend/migrations"
+	"github.com/FayezBast/repometeor/backend/migrations"
 )
 
 // migrationLockID is the PostgreSQL advisory lock key held for the duration of

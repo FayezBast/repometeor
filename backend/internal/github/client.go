@@ -15,8 +15,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/repometeor/repometeor/backend/internal/config"
-	"github.com/repometeor/repometeor/backend/internal/reponame"
+	"github.com/FayezBast/repometeor/backend/internal/config"
+	"github.com/FayezBast/repometeor/backend/internal/reponame"
 )
 
 // Client is the live GitHub REST provider.

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/repometeor/repometeor/backend/internal/scoring"
+	"github.com/FayezBast/repometeor/backend/internal/scoring"
 )
 
 var demoReference = time.Date(2026, 8, 1, 12, 0, 0, 0, time.UTC)

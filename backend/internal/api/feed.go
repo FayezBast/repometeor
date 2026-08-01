@@ -12,8 +12,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/repometeor/repometeor/backend/internal/scoring"
-	"github.com/repometeor/repometeor/backend/internal/service"
+	"github.com/FayezBast/repometeor/backend/internal/scoring"
+	"github.com/FayezBast/repometeor/backend/internal/service"
 )
 
 // maxFeedItems bounds an Atom response. Feed readers poll frequently, so the

@@ -7,11 +7,11 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/repometeor/repometeor/backend/internal/clock"
-	"github.com/repometeor/repometeor/backend/internal/config"
-	"github.com/repometeor/repometeor/backend/internal/github"
-	"github.com/repometeor/repometeor/backend/internal/repository"
-	"github.com/repometeor/repometeor/backend/internal/telemetry"
+	"github.com/FayezBast/repometeor/backend/internal/clock"
+	"github.com/FayezBast/repometeor/backend/internal/config"
+	"github.com/FayezBast/repometeor/backend/internal/github"
+	"github.com/FayezBast/repometeor/backend/internal/repository"
+	"github.com/FayezBast/repometeor/backend/internal/telemetry"
 )
 
 // Discoverer finds new repositories to track.

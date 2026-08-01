@@ -6,7 +6,11 @@ Until the first stable release, only the latest tagged `0.x` release and the def
 
 ## Private reporting
 
-Do not open a public issue for a suspected vulnerability, leaked token, exploitable deployment detail, private data, or working proof of concept. Before launch, maintainers must replace `security@project.invalid` with a monitored private address and enable GitHub private vulnerability reporting. Include affected version, impact, reproduction steps, and a minimal proof without real credentials or personal data.
+Do not open a public issue for a suspected vulnerability, leaked token, exploitable deployment detail, private data, or working proof of concept.
+
+Report privately through GitHub: open the repository's **Security** tab and choose **Report a vulnerability**. This opens a private advisory visible only to you and the maintainers. Include affected version, impact, reproduction steps, and a minimal proof without real credentials or personal data.
+
+If you cannot use GitHub private reporting, open a public issue that says only that you have a security report and asks for a private channel — never include the details themselves.
 
 Maintainers will acknowledge reports when they are able, assess severity and affected releases, coordinate a fix and disclosure, and credit reporters who want attribution. This policy does not promise a fixed response deadline because maintainer availability may vary.
 

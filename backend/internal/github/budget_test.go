@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/repometeor/repometeor/backend/internal/clock"
+	"github.com/FayezBast/repometeor/backend/internal/clock"
 )
 
 var budgetNow = time.Date(2026, 8, 1, 12, 0, 0, 0, time.UTC)

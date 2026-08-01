@@ -7,7 +7,7 @@ import (
 	"encoding/hex"
 	"time"
 
-	"github.com/repometeor/repometeor/backend/internal/database"
+	"github.com/FayezBast/repometeor/backend/internal/database"
 )
 
 // Cache stores conditional-request validators for GitHub resources.

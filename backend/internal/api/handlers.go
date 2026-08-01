@@ -10,10 +10,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/repometeor/repometeor/backend/internal/reponame"
-	"github.com/repometeor/repometeor/backend/internal/repository"
-	"github.com/repometeor/repometeor/backend/internal/scoring"
-	"github.com/repometeor/repometeor/backend/internal/service"
+	"github.com/FayezBast/repometeor/backend/internal/reponame"
+	"github.com/FayezBast/repometeor/backend/internal/repository"
+	"github.com/FayezBast/repometeor/backend/internal/scoring"
+	"github.com/FayezBast/repometeor/backend/internal/service"
 )
 
 // Query parameter bounds. Every numeric input is clamped rather than trusted.

@@ -14,15 +14,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/repometeor/repometeor/backend/internal/clock"
-	"github.com/repometeor/repometeor/backend/internal/config"
-	"github.com/repometeor/repometeor/backend/internal/database"
-	"github.com/repometeor/repometeor/backend/internal/demo"
-	"github.com/repometeor/repometeor/backend/internal/jobs"
-	"github.com/repometeor/repometeor/backend/internal/reponame"
-	"github.com/repometeor/repometeor/backend/internal/repository"
-	"github.com/repometeor/repometeor/backend/internal/service"
-	"github.com/repometeor/repometeor/backend/internal/telemetry"
+	"github.com/FayezBast/repometeor/backend/internal/clock"
+	"github.com/FayezBast/repometeor/backend/internal/config"
+	"github.com/FayezBast/repometeor/backend/internal/database"
+	"github.com/FayezBast/repometeor/backend/internal/demo"
+	"github.com/FayezBast/repometeor/backend/internal/jobs"
+	"github.com/FayezBast/repometeor/backend/internal/reponame"
+	"github.com/FayezBast/repometeor/backend/internal/repository"
+	"github.com/FayezBast/repometeor/backend/internal/service"
+	"github.com/FayezBast/repometeor/backend/internal/telemetry"
 )
 
 // The integration suite drives the API against a real PostgreSQL instance

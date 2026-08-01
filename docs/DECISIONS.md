@@ -127,6 +127,25 @@ They skip cleanly while the repository is private and run in full the moment it
 becomes public or GHAS is enabled. `govulncheck` and `pnpm audit` continue to
 run in every configuration as advisory, non-blocking reports.
 
+## 2026-08-01 — Canonical location is the maintainer's personal account
+
+The Go module path declared `github.com/repometeor/repometeor/backend`, but no
+`repometeor` user or organization exists on GitHub and the repository actually
+lives at `github.com/FayezBast/repometeor`. In Go the module path is the fetch
+URL, so `go install github.com/repometeor/repometeor/backend/cmd/api@latest`
+would have returned 404 for every user, even though building from a clone
+worked fine and hid the problem.
+
+Rather than register an organization to match the aspirational path, the module
+path was rewritten to `github.com/FayezBast/repometeor/backend` — 116 lines
+across 37 files, plus the `NEXT_PUBLIC_GITHUB_REPO_URL` default, which pointed
+at the same nonexistent repository and rendered a dead "Source" link in the
+footer of the demo stack.
+
+This was settled before going public deliberately: once the module is public and
+imported, changing its path is a breaking change for every consumer. Moving to an
+organization later remains possible at the cost of a second rewrite.
+
 ## Environment verification status
 
 Verified 2026-08-01 on macOS 15 (arm64) with Go 1.25.6, Node 26.4.0, pnpm

@@ -24,11 +24,11 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/repometeor/repometeor/backend/internal/clock"
-	"github.com/repometeor/repometeor/backend/internal/config"
-	"github.com/repometeor/repometeor/backend/internal/database"
-	"github.com/repometeor/repometeor/backend/internal/reponame"
-	"github.com/repometeor/repometeor/backend/internal/telemetry"
+	"github.com/FayezBast/repometeor/backend/internal/clock"
+	"github.com/FayezBast/repometeor/backend/internal/config"
+	"github.com/FayezBast/repometeor/backend/internal/database"
+	"github.com/FayezBast/repometeor/backend/internal/reponame"
+	"github.com/FayezBast/repometeor/backend/internal/telemetry"
 )
 
 var testRef = time.Date(2026, 8, 1, 12, 0, 0, 0, time.UTC)

@@ -19,6 +19,12 @@ All notable changes follow Keep a Changelog and semantic versioning. The project
 - Centralized the collection job payload shared by API producers and worker consumers.
 - Pinned TypeScript and ESLint to versions compatible with the current Next.js lint toolchain.
 
+### Fixed
+
+- Corrected the Go module path to `github.com/FayezBast/repometeor/backend`. It previously declared `github.com/repometeor/repometeor/backend`, an address with no GitHub account behind it, so `go install` and any downstream import resolved to a 404 while building from a clone kept working and masked it.
+- Pointed `NEXT_PUBLIC_GITHUB_REPO_URL` at the real repository. Its default named the same nonexistent path, leaving a dead "Source" link in the footer of every demo and Compose deployment.
+- Replaced the `security@project.invalid` and `conduct@project.invalid` placeholders with working private channels: GitHub private vulnerability reporting for security, and the maintainer's GitHub profile plus GitHub's abuse form for conduct.
+
 ### Security
 
 - Exact-origin CORS, bounded bodies and queries, structured redacted logs, HMAC-based durable tracking limits, XML escaping, and non-root/read-only-compatible containers.

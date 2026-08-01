@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/repometeor/repometeor/backend/internal/reponame"
+	"github.com/FayezBast/repometeor/backend/internal/reponame"
 )
 
 // TrackingTier controls how often a repository is polled.

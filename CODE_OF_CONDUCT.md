@@ -14,6 +14,8 @@ Demonstrate empathy and kindness, respect differing viewpoints, give and accept 
 
 Community leaders may remove, edit, or reject contributions and may temporarily or permanently restrict participation for behavior they deem inappropriate, threatening, offensive, or harmful. Reports will be reviewed privately and fairly, with conflicts of interest disclosed where possible.
 
-Before public launch, maintainers must replace `conduct@project.invalid` with a monitored private address. Reports may be sent there; do not include sensitive security details that belong under [SECURITY.md](SECURITY.md). Maintainers will protect reporter privacy as far as practical and explain enforcement decisions to the affected parties.
+To report conduct concerns privately, contact the maintainer through their GitHub profile at <https://github.com/FayezBast>. Behavior that violates GitHub's own terms — harassment, spam, threats — can also be reported directly to GitHub at <https://github.com/contact/report-abuse>, which reaches GitHub staff rather than this project's maintainers.
+
+Do not include sensitive security details in a conduct report; those belong under [SECURITY.md](SECURITY.md). Maintainers will protect reporter privacy as far as practical and explain enforcement decisions to the affected parties.
 
 This code applies in project spaces and when representing the project publicly. It is adapted from Contributor Covenant 2.1, available at <https://www.contributor-covenant.org/version/2/1/code_of_conduct.html>.

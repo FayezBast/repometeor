@@ -11,13 +11,13 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/repometeor/repometeor/backend/internal/api"
-	"github.com/repometeor/repometeor/backend/internal/clock"
-	"github.com/repometeor/repometeor/backend/internal/config"
-	"github.com/repometeor/repometeor/backend/internal/database"
-	"github.com/repometeor/repometeor/backend/internal/repository"
-	"github.com/repometeor/repometeor/backend/internal/service"
-	"github.com/repometeor/repometeor/backend/internal/telemetry"
+	"github.com/FayezBast/repometeor/backend/internal/api"
+	"github.com/FayezBast/repometeor/backend/internal/clock"
+	"github.com/FayezBast/repometeor/backend/internal/config"
+	"github.com/FayezBast/repometeor/backend/internal/database"
+	"github.com/FayezBast/repometeor/backend/internal/repository"
+	"github.com/FayezBast/repometeor/backend/internal/service"
+	"github.com/FayezBast/repometeor/backend/internal/telemetry"
 )
 
 func main() {

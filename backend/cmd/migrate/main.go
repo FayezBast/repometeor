@@ -15,9 +15,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/repometeor/repometeor/backend/internal/config"
-	"github.com/repometeor/repometeor/backend/internal/database"
-	"github.com/repometeor/repometeor/backend/internal/telemetry"
+	"github.com/FayezBast/repometeor/backend/internal/config"
+	"github.com/FayezBast/repometeor/backend/internal/database"
+	"github.com/FayezBast/repometeor/backend/internal/telemetry"
 )
 
 func main() {

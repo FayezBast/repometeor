@@ -11,7 +11,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/repometeor/repometeor/backend/internal/database"
+	"github.com/FayezBast/repometeor/backend/internal/database"
 )
 
 // Jobs is the durable work queue.

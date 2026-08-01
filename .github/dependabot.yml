@@ -13,6 +13,13 @@ updates:
       safe-js-development:
         dependency-type: development
         update-types: [minor, patch]
+    ignore:
+      # typescript-eslint refuses to load under TS 7.0 ("does not support TS
+      # 7.0"), so a major TypeScript bump takes `pnpm lint` down across the
+      # workspace regardless of whether the code itself is compatible. Track
+      # typescript-eslint#10940 and drop this entry once TS >=7 is supported.
+      - dependency-name: typescript
+        update-types: [version-update:semver-major]
   - package-ecosystem: github-actions
     directory: /
     schedule: { interval: monthly }

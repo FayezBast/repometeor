@@ -151,7 +151,7 @@ Contributions are welcome. Start with [GOOD_FIRST_ISSUES.md](docs/GOOD_FIRST_ISS
 
 ## Security
 
-Do not report secrets or exploitable details in a public issue. Follow [SECURITY.md](SECURITY.md), including the token-exposure procedure. Maintainers must configure a private reporting address before public launch.
+Do not report secrets or exploitable details in a public issue. Report privately through the repository's **Security** tab using **Report a vulnerability**. Follow [SECURITY.md](SECURITY.md), including the token-exposure procedure.
 
 ## License
 

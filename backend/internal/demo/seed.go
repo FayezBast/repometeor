@@ -6,8 +6,8 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/repometeor/repometeor/backend/internal/clock"
-	"github.com/repometeor/repometeor/backend/internal/repository"
+	"github.com/FayezBast/repometeor/backend/internal/clock"
+	"github.com/FayezBast/repometeor/backend/internal/repository"
 )
 
 // SeedResult reports what a seed run wrote.

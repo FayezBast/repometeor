@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/repometeor/repometeor/backend/internal/config"
-	"github.com/repometeor/repometeor/backend/internal/telemetry"
+	"github.com/FayezBast/repometeor/backend/internal/config"
+	"github.com/FayezBast/repometeor/backend/internal/telemetry"
 )
 
 const testToken = "ghp_testtoken_do_not_use" //nolint:gosec // fixture value

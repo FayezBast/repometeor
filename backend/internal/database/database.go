@@ -16,7 +16,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/repometeor/repometeor/backend/internal/config"
+	"github.com/FayezBast/repometeor/backend/internal/config"
 )
 
 // Pool is the subset of pgxpool.Pool that RepoMeteor uses. Accepting an

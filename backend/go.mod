@@ -1,4 +1,4 @@
-module github.com/repometeor/repometeor/backend
+module github.com/FayezBast/repometeor/backend
 
 go 1.25.12
 

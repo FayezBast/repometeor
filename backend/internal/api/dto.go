@@ -3,8 +3,8 @@ package api
 import (
 	"time"
 
-	"github.com/repometeor/repometeor/backend/internal/repository"
-	"github.com/repometeor/repometeor/backend/internal/scoring"
+	"github.com/FayezBast/repometeor/backend/internal/repository"
+	"github.com/FayezBast/repometeor/backend/internal/scoring"
 )
 
 // The DTOs below are the API's public contract. They are deliberately separate
