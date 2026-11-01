@@ -1,12 +1,12 @@
 # syntax=docker/dockerfile:1.7
-FROM node:24.13.0-alpine AS deps
+FROM node:26.13.0-alpine AS deps
 RUN corepack enable
 WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/web/package.json apps/web/package.json
 RUN pnpm install --frozen-lockfile --filter @repometeor/web...
 
-FROM node:24.13.0-alpine AS build
+FROM node:26.13.0-alpine AS build
 RUN corepack enable
 WORKDIR /app
 ARG NEXT_PUBLIC_API_URL
@@ -21,7 +21,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/web ./apps/web
 RUN pnpm --filter @repometeor/web build
 
-FROM node:24.13.0-alpine AS runtime
+FROM node:26.13.0-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production PORT=3000 HOSTNAME=0.0.0.0
 RUN addgroup -S repometeor && adduser -S -G repometeor -u 10001 repometeor
